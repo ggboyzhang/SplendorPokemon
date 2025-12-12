@@ -1,0 +1,22 @@
+[
+  {
+    "name": "",
+    "src": "",
+    "level": -1,
+    "point": -1,
+    "evolution": {
+      "name": "",
+      "cost": {
+        "ball_color": -1,
+        "number": -1
+      }
+    },
+    "reward": {
+      "ball_color": -1,
+      "number": -1
+    },
+    "cost": [
+      { "ball_color": -1, "number": -1 }
+    ]
+  }
+]

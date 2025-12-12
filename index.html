@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>璀璨宝石（Pokémon）- HTML 版</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">◆</div>
+      <div>
+        <div class="title">璀璨宝石（Pokémon）</div>
+        <div class="sub">原生 HTML/CSS/JS · 支持存档</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <label class="select">
+        <span>人数</span>
+        <select id="playerCount">
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4" selected>4</option>
+        </select>
+      </label>
+
+      <button id="btnNew" class="btn">新游戏</button>
+      <button id="btnSave" class="btn">存档</button>
+      <button id="btnLoad" class="btn">读档</button>
+
+      <button id="btnExport" class="btn">导出存档JSON</button>
+      <label class="btn filebtn">
+        导入存档JSON
+        <input id="importFile" type="file" accept="application/json" />
+      </label>
+
+      <button id="btnResetStorage" class="btn danger">清空本地存档</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="panel">
+      <h2>公共供应区</h2>
+
+      <div class="pool">
+        <div class="pool-row" id="tokenPool"></div>
+        <div class="pool-hint">
+          颜色枚举：red_ball=0, pink_ball=1, blue_ball=2, yellow_ball=3, black_ball=4, purple_ball=5
+        </div>
+      </div>
+
+      <div class="market">
+        <h3>中央展示区（占位牌面）</h3>
+        <div class="market-grid" id="market"></div>
+        <div class="market-actions">
+          <button id="btnReplaceOne" class="btn ghost">弃掉展示区 1 张并补 1 张（占位）</button>
+        </div>
+      </div>
+
+      <div class="turnbox">
+        <div class="turnline">
+          <span class="badge" id="turnBadge">回合：-</span>
+          <span class="badge" id="currentPlayerBadge">当前玩家：-</span>
+          <span class="badge" id="trophyBadge">奖杯：-</span>
+        </div>
+
+        <div class="action-grid">
+          <button id="actTake3" class="btn">行动1：拿3个不同色</button>
+          <button id="actTake2" class="btn">行动2：拿2个同色（需≥4）</button>
+          <button id="actReserve" class="btn">行动3：保留1张并拿1大师球</button>
+          <button id="actBuy" class="btn">行动4：捕捉/购买1张</button>
+          <button id="actEvolve" class="btn ghost">进化（占位：每回合一次）</button>
+          <button id="actEndTurn" class="btn primary">结束回合</button>
+        </div>
+
+        <div class="help">
+          <div class="help-title">操作提示（点击即可）</div>
+          <ul>
+            <li>点击公共 token 颜色：用于“拿球”选择</li>
+            <li>点击展示区卡牌：用于“保留 / 购买”选择</li>
+            <li>点击玩家保留区卡牌：用于“购买保留牌”选择</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>玩家区域</h2>
+      <div id="players" class="players"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div>说明：卡牌/训练家数据已按你指定 JSON 结构预留空白；当前用“占位卡”生成可玩流程与存档机制。</div>
+  </footer>
+
+  <script type="module" src="game.js"></script>
+</body>
+</html>
