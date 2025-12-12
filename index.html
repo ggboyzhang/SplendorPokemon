@@ -42,28 +42,106 @@
 
   <main class="app">
       <!-- 左侧：打牌主区域（4/5） -->
-      <section class="play-area">
+      <section class="table-area">
 
-          <!-- 公共区 -->
-          <section class="public-area">
-              <h2>公共区域</h2>
+          <!-- 上：电脑玩家 -->
+          <div class="player-area top" id="player-top">
+              <div class="player-inner">
+                  <div class="cards-owned">已获得卡牌</div>
+                  <div class="tokens-owned">已获得 token</div>
+                  <div class="cards-reserved">已保留卡牌</div>
+              </div>
+          </div>
 
-              <div class="token-pool">
-                  <h3>精灵球供应</h3>
-                  <div id="tokenPool" class="pool-row"></div>
+          <!-- 左：电脑玩家 -->
+          <div class="player-area left" id="player-left">
+              <div class="player-inner">
+                  <div class="cards-owned">已获得卡牌</div>
+                  <div class="tokens-owned">已获得 token</div>
+                  <div class="cards-reserved">已保留卡牌</div>
+              </div>
+          </div>
+
+          <!-- 中央：牌桌 -->
+          <div class="center-area">
+
+              <!-- 牌堆 + 展示区 -->
+              <div class="card-zones">
+
+                  <!-- Lv1 -->
+                  <div class="zone level-1">
+                      <div class="deck">Lv1 牌堆</div>
+                      <div class="display">
+                          <div class="slot"></div><div class="slot"></div>
+                          <div class="slot"></div><div class="slot"></div>
+                      </div>
+                  </div>
+
+                  <!-- Lv2 -->
+                  <div class="zone level-2">
+                      <div class="deck">Lv2 牌堆</div>
+                      <div class="display">
+                          <div class="slot"></div><div class="slot"></div>
+                          <div class="slot"></div><div class="slot"></div>
+                      </div>
+                  </div>
+
+                  <!-- Lv3 -->
+                  <div class="zone level-3">
+                      <div class="deck">Lv3 牌堆</div>
+                      <div class="display">
+                          <div class="slot"></div><div class="slot"></div>
+                          <div class="slot"></div><div class="slot"></div>
+                      </div>
+                  </div>
+
+                  <!-- 稀有 -->
+                  <div class="zone rare">
+                      <div class="deck">稀有牌堆</div>
+                      <div class="display">
+                          <div class="slot"></div>
+                      </div>
+                  </div>
+
+                  <!-- 传说 -->
+                  <div class="zone legend">
+                      <div class="deck">传说牌堆</div>
+                      <div class="display">
+                          <div class="slot"></div>
+                      </div>
+                  </div>
+
               </div>
 
-              <div class="market-area">
-                  <h3>中央展示区</h3>
-                  <div id="market" class="market-grid"></div>
+              <!-- Token 区 -->
+              <div class="token-zone">
+                  <div class="token-slot red"></div>
+                  <div class="token-slot pink"></div>
+                  <div class="token-slot blue"></div>
+                  <div class="token-slot yellow"></div>
+                  <div class="token-slot black"></div>
+                  <div class="token-slot purple"></div>
               </div>
-          </section>
 
-          <!-- 玩家区 -->
-          <section class="players-area">
-              <h2>玩家区域</h2>
-              <div id="players" class="players-vertical"></div>
-          </section>
+          </div>
+
+          <!-- 右：电脑玩家 -->
+          <div class="player-area right" id="player-right">
+              <div class="player-inner">
+                  <div class="cards-owned">已获得卡牌</div>
+                  <div class="tokens-owned">已获得 token</div>
+                  <div class="cards-reserved">已保留卡牌</div>
+              </div>
+          </div>
+
+          <!-- 下：玩家 -->
+          <div class="player-area bottom" id="player-bottom">
+              <div class="player-inner">
+                  <div class="cards-owned">已获得卡牌</div>
+                  <div class="tokens-owned">已获得 token</div>
+                  <div class="cards-reserved">已保留卡牌</div>
+              </div>
+          </div>
 
       </section>
 
@@ -90,12 +168,6 @@
           <section class="side-block">
               <h3>打牌记录</h3>
               <div id="logPanel" class="log-panel"></div>
-          </section>
-
-          <section class="side-block">
-              <h3>存档</h3>
-              <button id="btnSave">存档</button>
-              <button id="btnLoad">读档</button>
           </section>
 
       </aside>

@@ -343,3 +343,110 @@ h3{color:#cbd5e1; font-size:14px}
     margin-bottom: 6px;
     line-height: 1.4;
 }
+
+.table-area {
+    display: grid;
+    grid-template-columns: 220px 1fr 220px;
+    grid-template-rows: 180px 1fr 220px;
+    gap: 12px;
+    height: 100%;
+}
+
+/* 玩家位置 */
+.player-area {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 8px;
+    background: rgba(15,23,42,0.6);
+}
+
+    .player-area.top {
+        grid-column: 1 / 4;
+    }
+
+    .player-area.left {
+        grid-row: 2;
+    }
+
+    .player-area.right {
+        grid-row: 2;
+    }
+
+    .player-area.bottom {
+        grid-column: 1 / 4;
+    }
+
+/* 中央区域 */
+.center-area {
+    grid-column: 2;
+    grid-row: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* 牌区 */
+.card-zones {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+}
+
+.zone {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.deck {
+    width: 80px;
+    height: 110px;
+    border: 2px solid var(--line);
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    font-size: 12px;
+    background: rgba(2,6,23,0.8);
+}
+
+.display {
+    display: flex;
+    gap: 8px;
+}
+
+.slot {
+    width: 80px;
+    height: 110px;
+    border: 1px dashed rgba(148,163,184,0.4);
+    border-radius: 10px;
+}
+
+/* Token 区 */
+.token-zone {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.token-slot {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+}
+
+.player-inner {
+    display: flex;
+    gap: 6px;
+    height: 100%;
+}
+
+.cards-owned,
+.tokens-owned,
+.cards-reserved {
+    flex: 1;
+    border: 1px dashed rgba(148,163,184,0.25);
+    border-radius: 10px;
+    padding: 4px;
+    font-size: 11px;
+}

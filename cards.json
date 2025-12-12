@@ -1,6 +1,7 @@
 [
   {
     "name": "",
+    "md5": "",
     "src": "",
     "level": -1,
     "point": -1,
@@ -24,7 +25,8 @@
   },
   {
     "name": "独角虫",
-    "src": "",
+    "md5": "a5caa846b0b786cea56ca644db83fbfd",
+    "src": "card_image/独角虫1",
     "level": 1,
     "point": 0,
     "evolution": {
@@ -59,7 +61,8 @@
   },
   {
     "name": "独角虫",
-    "src": "",
+    "md5": "b8eec5c31eba72e1f2f39feb57f2fb51",
+    "src": "card_image/独角虫2",
     "level": 1,
     "point": 0,
     "evolution": {
@@ -75,20 +78,148 @@
     },
     "cost": [
       {
-        "ball_color": 0,
-        "number": 1
+        "ball_color": 2,
+        "number": 2
       },
       {
-        "ball_color": 3,
+        "ball_color": 0,
         "number": 1
       },
       {
         "ball_color": 1,
         "number": 1
-      },
+      }
+    ]
+  },
+  {
+    "name": "走路草",
+    "md5": "dd6b24123374bb298ebf036185d067c5",
+    "src": "card_image/走路草1",
+    "level": 1,
+    "point": 0,
+    "evolution": {
+      "name": "臭臭花",
+      "cost": {
+        "ball_color": 3,
+        "number": 2
+      }
+    },
+    "reward": {
+      "ball_color": 4,
+      "number": 1
+    },
+    "cost": [
       {
         "ball_color": 2,
+        "number": 3
+      }
+    ]
+  },
+  {
+    "name": "走路草",
+    "md5": "142706161cb47b943c9d22c8e8dbb0bc",
+    "src": "card_image/走路草2",
+    "level": 1,
+    "point": 0,
+    "evolution": {
+      "name": "臭臭花",
+      "cost": {
+        "ball_color": 3,
+        "number": 2
+      }
+    },
+    "reward": {
+      "ball_color": 4,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 1,
+        "number": 2
+      },
+      {
+        "ball_color": 0,
         "number": 1
+      }
+    ]
+  },
+  {
+    "name": "走路草",
+    "md5": "f1bed3038cc212b356b183a232ad478c",
+    "src": "card_image/走路草3",
+    "level": 1,
+    "point": 0,
+    "evolution": {
+      "name": "臭臭花",
+      "cost": {
+        "ball_color": 3,
+        "number": 2
+      }
+    },
+    "reward": {
+      "ball_color": 4,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 3,
+        "number": 2
+      },
+      {
+        "ball_color": 4,
+        "number": 2
+      }
+    ]
+  },
+  {
+    "name": "迷你龙",
+    "md5": "3fe12a7cd5e03c1ca6290a11e7056b61",
+    "src": "card_image/迷你龙1",
+    "level": 1,
+    "point": 1,
+    "evolution": {
+      "name": "哈克龙",
+      "cost": {
+        "ball_color": 2,
+        "number": 3
+      }
+    },
+    "reward": {
+      "ball_color": 4,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 3,
+        "number": 3
+      },
+      {
+        "ball_color": 0,
+        "number": 2
+      }
+    ]
+  },
+  {
+    "name": "迷你龙",
+    "md5": "4aaf12c3dc52a9ebe7eb5ac746b3d7f1",
+    "src": "card_image/迷你龙2",
+    "level": 1,
+    "point": 1,
+    "evolution": {
+      "name": "哈克龙",
+      "cost": {
+        "ball_color": 2,
+        "number": 3
+      }
+    },
+    "reward": {
+      "ball_color": 4,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 4,
+        "number": 4
       }
     ]
   }
