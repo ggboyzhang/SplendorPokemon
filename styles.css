@@ -85,9 +85,7 @@ body {
    布局
 ======================= */
 .app {
-    display: grid;
-    grid-template-columns: 4fr 1fr;
-    gap: 12px;
+    display: block;
     height: calc(100vh - 60px);
     padding: 12px;
 }
@@ -97,8 +95,8 @@ body {
 ======================= */
 .table-area {
     display: grid;
-    grid-template-columns: 260px 1fr 260px;
-    grid-template-rows: 200px 1fr 220px;
+    grid-template-columns: minmax(220px, 1fr) minmax(360px, 1.4fr) minmax(220px, 1fr);
+    grid-template-rows: minmax(160px, 1fr) minmax(240px, 1.2fr) minmax(180px, 1fr);
     gap: 12px;
 }
 
@@ -128,6 +126,7 @@ body {
     display: flex;
     gap: 0;
     height: 100%;
+    min-width: 0;
 }
 
 .player-board.horizontal {
@@ -143,8 +142,9 @@ body {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    flex: 1;
+    flex: 1 1 0;
     position: relative;
+    min-width: 0;
 }
 
 .section-header {
@@ -180,13 +180,14 @@ body {
 }
 
 .reserved-section {
-    width: var(--reserved-w);
     min-height: var(--reserved-h);
-    flex: 0 0 var(--reserved-w);
+    flex: 1 1 var(--reserved-w);
+    min-width: var(--reserved-w);
 }
 
 .info-section {
-    flex: 0 0 130px;
+    flex: 0 1 140px;
+    min-width: 120px;
 }
 
 .reserved-stack {
@@ -311,8 +312,10 @@ body {
 /* token */
 .token-zone {
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
+    align-items: center;
     gap: 10px;
+    padding-left: 8px;
 }
 
 .token-slot {
@@ -320,4 +323,12 @@ body {
     height: 42px;
     border-radius: 50%;
     border: 1px solid var(--line);
+}
+
+.end-turn {
+    margin-left: 12px;
+    padding: 10px 14px;
+    border-color: #1d4ed8;
+    color: #bfdbfe;
+    background: rgba(37, 99, 235, 0.15);
 }
