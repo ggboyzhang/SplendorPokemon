@@ -321,36 +321,3 @@ body {
     border-radius: 50%;
     border: 1px solid var(--line);
 }
-
-/* =======================
-   右侧信息栏
-======================= */
-.side-panel {
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 12px;
-    background: rgba(2, 6, 23, 0.65);
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.side-block {
-    border-bottom: 1px dashed rgba(148, 163, 184, 0.25);
-    padding-bottom: 8px;
-}
-
-.side-block:last-child {
-    border-bottom: none;
-}
-
-.info-line {
-    font-size: 13px;
-}
-
-.log-panel {
-    max-height: 180px;
-    overflow-y: auto;
-    font-size: 12px;
-    color: var(--muted);
-}
