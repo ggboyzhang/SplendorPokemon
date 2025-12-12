@@ -125,42 +125,68 @@ body {
 }
 
 .player-board {
-    display: grid;
-    gap: 12px;
+    display: flex;
+    gap: 0;
     height: 100%;
 }
 
 .player-board.horizontal {
-    grid-template-columns: var(--reserved-w) max-content 1fr;
     align-items: stretch;
 }
 
 .player-board.vertical {
-    grid-template-rows: var(--reserved-h) auto 1fr;
-    align-items: start;
+    flex-direction: column;
 }
 
-.player-area .zone {
+.player-section {
+    padding: 12px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
     position: relative;
-    padding: 10px;
-    border-radius: 10px;
-    background: rgba(2, 6, 23, 0.25);
-    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.06), inset 0 -1px 2px rgba(0, 0, 0, 0.4);
-    border: 1px dashed rgba(148, 163, 184, 0.35);
 }
 
-.zone-title {
-    position: absolute;
-    top: 6px;
-    left: 10px;
+.section-header {
     font-size: 11px;
     color: var(--muted);
     letter-spacing: 1px;
 }
 
-.reserved-zone {
+.player-board.horizontal .player-section + .player-section::before {
+    content: "";
+    position: absolute;
+    left: -1px;
+    top: 8px;
+    bottom: 8px;
+    width: 3px;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.2) 0%, rgba(107, 114, 128, 0.4) 20%, rgba(15, 23, 42, 0.9) 55%, rgba(0, 0, 0, 0.65) 80%, rgba(255, 255, 255, 0.16) 100%);
+    border-radius: 20px;
+    box-shadow: inset 0 0 1px rgba(255, 255, 255, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+}
+
+.player-board.vertical .player-section + .player-section::before {
+    content: "";
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    top: -1px;
+    height: 3px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(107, 114, 128, 0.4) 20%, rgba(15, 23, 42, 0.9) 55%, rgba(0, 0, 0, 0.65) 80%, rgba(255, 255, 255, 0.16) 100%);
+    border-radius: 20px;
+    box-shadow: inset 0 0 1px rgba(255, 255, 255, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+}
+
+.reserved-section {
     width: var(--reserved-w);
-    height: var(--reserved-h);
+    min-height: var(--reserved-h);
+    flex: 0 0 var(--reserved-w);
+}
+
+.info-section {
+    flex: 0 0 130px;
 }
 
 .reserved-stack {
@@ -194,7 +220,7 @@ body {
     left: 16px;
 }
 
-.info-zone {
+.info-section {
     min-width: calc(var(--token-d) * 3 + 16px);
     display: grid;
     grid-template-rows: auto 1fr;
@@ -231,7 +257,7 @@ body {
     background: #334155;
 }
 
-.owned-zone {
+.owned-section {
     display: flex;
     flex-wrap: wrap;
     align-content: flex-start;
