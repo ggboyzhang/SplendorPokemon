@@ -258,5 +258,141 @@
         "number": 1
       }
     ]
+  },
+  {
+    "name": "鬼斯",
+    "md5": "7324da966f473160974e1c8ae29e7631",
+    "src": "card_image/鬼斯2",
+    "level": 1,
+    "point": 0,
+    "evolution": {
+      "name": "鬼斯通",
+      "cost": {
+        "ball_color": 4,
+        "number": 3
+      }
+    },
+    "reward": {
+      "ball_color": 3,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 1,
+        "number": 2
+      },
+      {
+        "ball_color": 4,
+        "number": 1
+      },
+      {
+        "ball_color": 0,
+        "number": 1
+      }
+    ]
+  },
+  {
+    "name": "妙蛙种子",
+    "md5": "e8c7d327d22c0e975d098aafcb38ee91",
+    "src": "card_image/妙蛙种子1",
+    "level": 1,
+    "point": 1,
+    "evolution": {
+      "name": "妙蛙草",
+      "cost": {
+        "ball_color": 1,
+        "number": 3
+      }
+    },
+    "reward": {
+      "ball_color": 3,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 0,
+        "number": 3
+      },
+      {
+        "ball_color": 4,
+        "number": 2
+      }
+    ]
+  },
+  {
+    "name": "妙蛙种子",
+    "md5": "9a2e527f8adc8b773906389b2513ae70",
+    "src": "card_image/妙蛙种子2",
+    "level": 1,
+    "point": 1,
+    "evolution": {
+      "name": "妙蛙草",
+      "cost": {
+        "ball_color": 1,
+        "number": 3
+      }
+    },
+    "reward": {
+      "ball_color": 3,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 3,
+        "number": 4
+      }
+    ]
+  },
+  {
+    "name": "尼多兰",
+    "md5": "ebdace300ce255f7114d4080b19ff289",
+    "src": "card_image/尼多兰1",
+    "level": 1,
+    "point": 0,
+    "evolution": {
+      "name": "尼多娜",
+      "cost": {
+        "ball_color": 2,
+        "number": 2
+      }
+    },
+    "reward": {
+      "ball_color": 3,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 4,
+        "number": 3
+      }
+    ]
+  },
+  {
+    "name": "尼多兰",
+    "md5": "5ba8641d8504c83f2ddcc6c6c2a7123c",
+    "src": "card_image/尼多兰2",
+    "level": 1,
+    "point": 0,
+    "evolution": {
+      "name": "尼多娜",
+      "cost": {
+        "ball_color": 2,
+        "number": 2
+      }
+    },
+    "reward": {
+      "ball_color": 3,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 2,
+        "number": 2
+      },
+      {
+        "ball_color": 3,
+        "number": 2
+      }
+    ]
   }
 ]
