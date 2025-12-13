@@ -422,5 +422,285 @@
         "number": 1
       }
     ]
+  },
+  {
+    "name": "蚊香蝌蚪",
+    "md5": "93c71bea16dfd48fbc5836a8c5861f85",
+    "src": "card_image/蚊香蝌蚪1",
+    "level": 1,
+    "point": 0,
+    "evolution": {
+      "name": "蚊香君",
+      "cost": {
+        "ball_color": 4,
+        "number": 2
+      }
+    },
+    "reward": {
+      "ball_color": 1,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 1,
+        "number": 2
+      },
+      {
+        "ball_color": 4,
+        "number": 2
+      }
+    ]
+  },
+  {
+    "name": "蚊香蝌蚪",
+    "md5": "b99fa9bc11661ef83ade716222b66931",
+    "src": "card_image/蚊香蝌蚪2",
+    "level": 1,
+    "point": 0,
+    "evolution": {
+      "name": "蚊香君",
+      "cost": {
+        "ball_color": 4,
+        "number": 2
+      }
+    },
+    "reward": {
+      "ball_color": 1,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 2,
+        "number": 2
+      },
+      {
+        "ball_color": 3,
+        "number": 1
+      }
+    ]
+  },
+  {
+    "name": "蚊香蝌蚪",
+    "md5": "02ef49b74b7100647c00375cf7a1ca60",
+    "src": "card_image/蚊香蝌蚪3",
+    "level": 1,
+    "point": 0,
+    "evolution": {
+      "name": "蚊香君",
+      "cost": {
+        "ball_color": 4,
+        "number": 2
+      }
+    },
+    "reward": {
+      "ball_color": 1,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 0,
+        "number": 3
+      }
+    ]
+  },
+  {
+    "name": "凯西",
+    "md5": "f8c2245dd1ce8b9643094e19ee9d2c76",
+    "src": "card_image/凯西1",
+    "level": 1,
+    "point": 1,
+    "evolution": {
+      "name": "勇基拉",
+      "cost": {
+        "ball_color": 0,
+        "number": 3
+      }
+    },
+    "reward": {
+      "ball_color": 1,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 1,
+        "number": 4
+      }
+    ]
+  },
+  {
+    "name": "凯西",
+    "md5": "3eb0c58907a6f99d3313d00cf07f2b21",
+    "src": "card_image/凯西2",
+    "level": 1,
+    "point": 1,
+    "evolution": {
+      "name": "勇基拉",
+      "cost": {
+        "ball_color": 0,
+        "number": 3
+      }
+    },
+    "reward": {
+      "ball_color": 1,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 2,
+        "number": 3
+      },
+      {
+        "ball_color": 3,
+        "number": 2
+      }
+    ]
+  },
+  {
+    "name": "绿毛虫",
+    "md5": "8acc2e839def4386af5ca3df6a3321c4",
+    "src": "card_image/绿毛虫1",
+    "level": 1,
+    "point": 0,
+    "evolution": {
+      "name": "铁甲蛹",
+      "cost": {
+        "ball_color": 2,
+        "number": 3
+      }
+    },
+    "reward": {
+      "ball_color": 1,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 2,
+        "number": 1
+      },
+      {
+        "ball_color": 3,
+        "number": 1
+      },
+      {
+        "ball_color": 0,
+        "number": 1
+      },
+      {
+        "ball_color": 4,
+        "number": 1
+      }
+    ]
+  },
+  {
+    "name": "绿毛虫",
+    "md5": "d8756b67c7d8583f554f2b483a1f01ae",
+    "src": "card_image/绿毛虫2",
+    "level": 1,
+    "point": 0,
+    "evolution": {
+      "name": "铁甲蛹",
+      "cost": {
+        "ball_color": 2,
+        "number": 3
+      }
+    },
+    "reward": {
+      "ball_color": 1,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 4,
+        "number": 2
+      },
+      {
+        "ball_color": 2,
+        "number": 1
+      },
+      {
+        "ball_color": 3,
+        "number": 1
+      }
+    ]
+  },
+  {
+    "name": "喇叭芽",
+    "md5": "921de02305b2d4bc6d6e95e10e930921",
+    "src": "card_image/喇叭芽1",
+    "level": 1,
+    "point": 0,
+    "evolution": {
+      "name": "口呆花",
+      "cost": {
+        "ball_color": 1,
+        "number": 2
+      }
+    },
+    "reward": {
+      "ball_color": 0,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 4,
+        "number": 2
+      },
+      {
+        "ball_color": 2,
+        "number": 1
+      }
+    ]
+  },
+  {
+    "name": "喇叭芽",
+    "md5": "cfd65822d28f7e4ab0c3a1ae8d1ed104",
+    "src": "card_image/喇叭芽2",
+    "level": 1,
+    "point": 0,
+    "evolution": {
+      "name": "口呆花",
+      "cost": {
+        "ball_color": 1,
+        "number": 2
+      }
+    },
+    "reward": {
+      "ball_color": 0,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 3,
+        "number": 3
+      }
+    ]
+  },
+  {
+    "name": "喇叭芽",
+    "md5": "a4866007dccf70cc9b61d19a3a8c2575",
+    "src": "card_image/喇叭芽3",
+    "level": 1,
+    "point": 0,
+    "evolution": {
+      "name": "口呆花",
+      "cost": {
+        "ball_color": 1,
+        "number": 2
+      }
+    },
+    "reward": {
+      "ball_color": 0,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 1,
+        "number": 2
+      },
+      {
+        "ball_color": 0,
+        "number": 2
+      }
+    ]
   }
 ]
