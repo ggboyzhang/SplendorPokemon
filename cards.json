@@ -702,5 +702,325 @@
         "number": 2
       }
     ]
+  },
+  {
+    "name": "杰尼龟",
+    "md5": "30068dca4aec4dfe00a83af5ec4c1ff5",
+    "src": "card_image/杰尼龟1",
+    "level": 1,
+    "point": 1,
+    "evolution": {
+      "name": "卡咪龟",
+      "cost": {
+        "ball_color": 4,
+        "number": 3
+      }
+    },
+    "reward": {
+      "ball_color": 0,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 0,
+        "number": 4
+      }
+    ]
+  },
+  {
+    "name": "杰尼龟",
+    "md5": "30493d6bdff98105cea8bb0e180d4ba9",
+    "src": "card_image/杰尼龟2",
+    "level": 1,
+    "point": 1,
+    "evolution": {
+      "name": "卡咪龟",
+      "cost": {
+        "ball_color": 4,
+        "number": 3
+      }
+    },
+    "reward": {
+      "ball_color": 0,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 1,
+        "number": 3
+      },
+      {
+        "ball_color": 2,
+        "number": 2
+      }
+    ]
+  },
+  {
+    "name": "腕力",
+    "md5": "6f988c40d620280aa5d49a43bb673aa8",
+    "src": "card_image/腕力1",
+    "level": 1,
+    "point": 0,
+    "evolution": {
+      "name": "豪力",
+      "cost": {
+        "ball_color": 3,
+        "number": 3
+      }
+    },
+    "reward": {
+      "ball_color": 0,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 2,
+        "number": 1
+      },
+      {
+        "ball_color": 3,
+        "number": 1
+      },
+      {
+        "ball_color": 1,
+        "number": 1
+      },
+      {
+        "ball_color": 4,
+        "number": 1
+      }
+    ]
+  },
+  {
+    "name": "腕力",
+    "md5": "3eae22cfc75cd1dfebfb81e04ff6e7f5",
+    "src": "card_image/腕力2",
+    "level": 1,
+    "point": 0,
+    "evolution": {
+      "name": "豪力",
+      "cost": {
+        "ball_color": 3,
+        "number": 3
+      }
+    },
+    "reward": {
+      "ball_color": 0,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 3,
+        "number": 2
+      },
+      {
+        "ball_color": 1,
+        "number": 1
+      },
+      {
+        "ball_color": 4,
+        "number": 1
+      }
+    ]
+  },
+  {
+    "name": "波波",
+    "md5": "375c3e68f8790e944ff2bd8efae66e2a",
+    "src": "card_image/波波1",
+    "level": 1,
+    "point": 0,
+    "evolution": {
+      "name": "比比鸟",
+      "cost": {
+        "ball_color": 0,
+        "number": 2
+      }
+    },
+    "reward": {
+      "ball_color": 2,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 2,
+        "number": 2
+      },
+      {
+        "ball_color": 0,
+        "number": 2
+      }
+    ]
+  },
+  {
+    "name": "波波",
+    "md5": "e3f390bd7332b8353977fe338921b29d",
+    "src": "card_image/波波2",
+    "level": 1,
+    "point": 0,
+    "evolution": {
+      "name": "比比鸟",
+      "cost": {
+        "ball_color": 0,
+        "number": 2
+      }
+    },
+    "reward": {
+      "ball_color": 2,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 1,
+        "number": 3
+      }
+    ]
+  },
+  {
+    "name": "波波",
+    "md5": "7d25f71a0c3e11737b0fe45575928ccc",
+    "src": "card_image/波波3",
+    "level": 1,
+    "point": 0,
+    "evolution": {
+      "name": "比比鸟",
+      "cost": {
+        "ball_color": 0,
+        "number": 2
+      }
+    },
+    "reward": {
+      "ball_color": 2,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 3,
+        "number": 2
+      },
+      {
+        "ball_color": 4,
+        "number": 1
+      }
+    ]
+  },
+  {
+    "name": "小火龙",
+    "md5": "f8b10841f2dfcf53430b6476ad0ed27b",
+    "src": "card_image/小火龙1",
+    "level": 1,
+    "point": 1,
+    "evolution": {
+      "name": "火恐龙",
+      "cost": {
+        "ball_color": 3,
+        "number": 3
+      }
+    },
+    "reward": {
+      "ball_color": 2,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 2,
+        "number": 4
+      }
+    ]
+  },
+  {
+    "name": "小火龙",
+    "md5": "4472e711a9c3fe8dd2808224ebfe1481",
+    "src": "card_image/小火龙2",
+    "level": 1,
+    "point": 1,
+    "evolution": {
+      "name": "火恐龙",
+      "cost": {
+        "ball_color": 3,
+        "number": 3
+      }
+    },
+    "reward": {
+      "ball_color": 2,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 4,
+        "number": 3
+      },
+      {
+        "ball_color": 1,
+        "number": 2
+      }
+    ]
+  },
+  {
+    "name": "小拳石",
+    "md5": "b3ba406cc25f01816da23e6dd0f2bc27",
+    "src": "card_image/小拳石1",
+    "level": 1,
+    "point": 0,
+    "evolution": {
+      "name": "隆隆石",
+      "cost": {
+        "ball_color": 1,
+        "number": 3
+      }
+    },
+    "reward": {
+      "ball_color": 2,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 0,
+        "number": 2
+      },
+      {
+        "ball_color": 3,
+        "number": 1
+      },
+      {
+        "ball_color": 2,
+        "number": 1
+      }
+    ]
+  },
+  {
+    "name": "小拳石",
+    "md5": "044e5209b8a22443f965eb8ac0ee9948",
+    "src": "card_image/小拳石2",
+    "level": 1,
+    "point": 0,
+    "evolution": {
+      "name": "隆隆石",
+      "cost": {
+        "ball_color": 1,
+        "number": 3
+      }
+    },
+    "reward": {
+      "ball_color": 2,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 4,
+        "number": 1
+      },
+      {
+        "ball_color": 3,
+        "number": 1
+      },
+      {
+        "ball_color": 1,
+        "number": 1
+      },
+      {
+        "ball_color": 0,
+        "number": 1
+      }
+    ]
   }
 ]
