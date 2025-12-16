@@ -132,39 +132,17 @@ body {
 .market-panel { height: 100%; }
 .token-panel { align-self: stretch; }
 
-.market-board {
-    display: grid;
-    gap: 6px;
-    grid-template-rows: repeat(5, minmax(0, 1fr));
-    min-height: 0;
-}
+.market-board { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: start; }
+.market-main { display: grid; gap: 8px; grid-template-rows: repeat(3, auto); }
+.market-side { display: grid; gap: 8px; grid-template-rows: repeat(2, auto); }
 
-.market-section {
-    display: grid;
-    grid-template-columns: var(--card-w) 1fr;
-    align-items: start;
-    gap: 8px;
-    padding: 6px;
-    border-radius: 12px;
-    background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(148,163,184,0.16);
-    min-height: 0;
-}
+.market-section { display: grid; grid-template-columns: var(--card-w) auto; align-items: start; gap: 10px; padding: 6px; border-radius: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(148,163,184,0.16); min-height: 0; }
 
 .panel-title { font-weight: 700; letter-spacing: 0.3px; color: #e5e7eb; }
 
-.load-hint {
-    padding: 8px 10px;
-    border-radius: 10px;
-    border: 1px solid rgba(248, 113, 113, 0.45);
-    background: rgba(127, 29, 29, 0.2);
-    color: #fecdd3;
-    font-size: 13px;
-}
-
 .market {
     display: grid;
-    gap: 6px;
+    gap: 10px;
     align-items: start;
     grid-auto-rows: var(--card-h);
     justify-content: start;
@@ -182,6 +160,7 @@ body {
     display: flex;
     flex-direction: column;
 }
+.market-card.empty { border-style: dashed; background: rgba(255,255,255,0.02); }
 .market-card:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(0,0,0,0.35); }
 .market-card.selected { border-color: rgba(94, 234, 212, 0.65); box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.35); }
 .market-visual {
@@ -202,6 +181,7 @@ body {
 .market-card.back:hover { transform: none; box-shadow: none; }
 .market-card.back .market-visual { background: transparent; }
 .market-card.ghost { opacity: 0.4; }
+.market-card.empty .market-visual { background: rgba(255,255,255,0.01); }
 
 .card-back {
     width: 100%;
@@ -238,6 +218,24 @@ body {
 
 .deck-indicator .card-back { position: absolute; inset: 0; border-radius: 12px; }
 .deck-indicator.ghost { opacity: 0.35; }
+
+.market-vertical {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 6px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(148,163,184,0.16);
+}
+
+.market-single-slot {
+    width: var(--card-w);
+    height: var(--card-h);
+}
+
+.market-single-slot > .market-card { margin: 0 auto; }
 
 .token-pool { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 .token-chip {

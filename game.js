@@ -35,7 +35,6 @@ const $ = (sel) => document.querySelector(sel);
 const el = {
   tokenPool: $("#tokenPool"),
   market: $("#market"),
-  loadHint: $("#loadHint"),
   players: $("#players"),
 
   playerCount: $("#playerCount"),
@@ -127,7 +126,12 @@ function loadCardLibrary(){
       .catch(err => {
         // 失败后允许重新尝试加载
         cardLibraryPromise = null;
-        lastLoadError = err?.message || "Failed to fetch";
+        const isFileProtocol = window.location.protocol === "file:";
+        if (isFileProtocol){
+          lastLoadError = "无法在 file:// 下加载 cards.json，请在本地服务器上打开";
+        } else {
+          lastLoadError = err?.message || "Failed to fetch";
+        }
         throw err;
       });
   }
@@ -628,7 +632,6 @@ function renderAll(){
   renderMarket();
   renderPlayers();
   renderBadges();
-  renderLoadHint();
 }
 
 function renderBadges(){
@@ -684,46 +687,71 @@ function renderMarket(){
   if (!el.market) return;
   el.market.innerHTML = "";
 
-  const groups = [
+  const main = document.createElement("div");
+  main.className = "market-main";
+  const side = document.createElement("div");
+  side.className = "market-side";
+
+  const mainGroups = [
     { level: 1, deckClass: "level-1-back", slots: 4 },
     { level: 2, deckClass: "level-2-back", slots: 4 },
     { level: 3, deckClass: "level-3-back", slots: 4 },
+  ];
+
+  for (const group of mainGroups){
+    main.appendChild(renderMarketRow(group));
+  }
+
+  const sideGroups = [
     { level: 4, deckClass: "rare-back", slots: 1 },
     { level: 5, deckClass: "legend-back", slots: 1 },
   ];
 
-  for (const group of groups){
-    const section = document.createElement("div");
-    section.className = "market-section";
-
-    const remain = state.decks[levelKey(group.level)]?.length || 0;
-    section.appendChild(renderDeckIndicator(group.deckClass, remain));
-
-    const grid = document.createElement("div");
-    grid.className = "market";
-    grid.style.gridTemplateColumns = `repeat(${group.slots}, var(--card-w))`;
-    grid.style.gridAutoRows = "var(--card-h)";
-
-    const cards = state.market.slotsByLevel[group.level] || [];
-    for (let i=0; i<group.slots; i++){
-      const card = cards[i];
-      grid.appendChild(card ? renderMarketCard(card) : renderBackPlaceholder(group.deckClass, remain === 0));
-    }
-
-    section.appendChild(grid);
-    el.market.appendChild(section);
+  for (const group of sideGroups){
+    side.appendChild(renderVerticalMarket(group));
   }
+
+  el.market.appendChild(main);
+  el.market.appendChild(side);
 }
 
-function renderLoadHint(){
-  if (!el.loadHint) return;
-  if (lastLoadError){
-    el.loadHint.textContent = `资源加载失败：${lastLoadError || "Failed to fetch"}`;
-    el.loadHint.classList.remove("hidden");
-  } else {
-    el.loadHint.classList.add("hidden");
-    el.loadHint.textContent = "";
+function renderMarketRow(group){
+  const section = document.createElement("div");
+  section.className = "market-section";
+
+  const remain = state.decks[levelKey(group.level)]?.length || 0;
+  section.appendChild(renderDeckIndicator(group.deckClass, remain));
+
+  const grid = document.createElement("div");
+  grid.className = "market";
+  grid.style.gridTemplateColumns = `repeat(${group.slots}, var(--card-w))`;
+  grid.style.gridAutoRows = "var(--card-h)";
+
+  const cards = state.market.slotsByLevel[group.level] || [];
+  for (let i=0; i<group.slots; i++){
+    const card = cards[i];
+    grid.appendChild(card ? renderMarketCard(card) : renderEmptySlot(remain === 0));
   }
+
+  section.appendChild(grid);
+  return section;
+}
+
+function renderVerticalMarket(group){
+  const wrap = document.createElement("div");
+  wrap.className = "market-vertical";
+
+  const remain = state.decks[levelKey(group.level)]?.length || 0;
+  wrap.appendChild(renderDeckIndicator(group.deckClass, remain));
+
+  const slotBox = document.createElement("div");
+  slotBox.className = "market-single-slot";
+
+  const card = (state.market.slotsByLevel[group.level] || [])[0];
+  slotBox.appendChild(card ? renderMarketCard(card) : renderEmptySlot(remain === 0));
+
+  wrap.appendChild(slotBox);
+  return wrap;
 }
 
 function renderDeckIndicator(deckClass, remain){
@@ -737,17 +765,17 @@ function renderDeckIndicator(deckClass, remain){
 }
 
 function renderBackPlaceholder(deckClass, isGhost){
+  return renderEmptySlot(isGhost);
+}
+
+function renderEmptySlot(isGhost){
   const placeholder = document.createElement("div");
-  placeholder.className = "market-card back" + (isGhost ? " ghost" : "");
+  placeholder.className = "market-card empty" + (isGhost ? " ghost" : "");
 
   const visual = document.createElement("div");
   visual.className = "market-visual";
-
-  const back = document.createElement("div");
-  back.className = `card-back ${deckClass}`;
-  visual.appendChild(back);
-
   placeholder.appendChild(visual);
+
   return placeholder;
 }
 
