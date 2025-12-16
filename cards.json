@@ -1562,5 +1562,185 @@
         "number": 1
       }
     ]
+  },
+  {
+    "name": "尼多娜",
+    "md5": "3663f9d53ddf3cbc0b3e0b7b683f8b72",
+    "src": "card_image/尼多娜1.png",
+    "level": 2,
+    "point": 1,
+    "evolution": {
+      "name": "尼多后",
+      "cost": {
+        "ball_color": 2,
+        "number": 4
+      }
+    },
+    "reward": {
+      "ball_color": 3,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 3,
+        "number": 3
+      },
+      {
+        "ball_color": 1,
+        "number": 2
+      },
+      {
+        "ball_color": 0,
+        "number": 2
+      }
+    ]
+  },
+  {
+    "name": "尼多娜",
+    "md5": "69e8078270e6bd857a21a2e8829b2383",
+    "src": "card_image/尼多娜2.png",
+    "level": 2,
+    "point": 1,
+    "evolution": {
+      "name": "尼多后",
+      "cost": {
+        "ball_color": 2,
+        "number": 4
+      }
+    },
+    "reward": {
+      "ball_color": 3,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 2,
+        "number": 3
+      },
+      {
+        "ball_color": 1,
+        "number": 2
+      },
+      {
+        "ball_color": 4,
+        "number": 2
+      }
+    ]
+  },
+  {
+    "name": "鬼斯通",
+    "md5": "fbc1a5581230afadcd2584b5392084ed",
+    "src": "card_image/鬼斯通1.png",
+    "level": 2,
+    "point": 2,
+    "evolution": {
+      "name": "耿鬼",
+      "cost": {
+        "ball_color": 0,
+        "number": 3
+      }
+    },
+    "reward": {
+      "ball_color": 3,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 4,
+        "number": 4
+      },
+      {
+        "ball_color": 1,
+        "number": 2
+      },
+      {
+        "ball_color": 0,
+        "number": 1
+      }
+    ]
+  },
+  {
+    "name": "鬼斯通",
+    "md5": "a24762bb8cad6b64c01072213ef29c34",
+    "src": "card_image/鬼斯通2.png",
+    "level": 2,
+    "point": 2,
+    "evolution": {
+      "name": "耿鬼",
+      "cost": {
+        "ball_color": 0,
+        "number": 3
+      }
+    },
+    "reward": {
+      "ball_color": 3,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 3,
+        "number": 5
+      },
+      {
+        "ball_color": 2,
+        "number": 2
+      }
+    ]
+  },
+  {
+    "name": "妙蛙草",
+    "md5": "32139a1e231c32514f54d86f12457872",
+    "src": "card_image/妙蛙草1.png",
+    "level": 2,
+    "point": 3,
+    "evolution": {
+      "name": "妙蛙花",
+      "cost": {
+        "ball_color": 2,
+        "number": 4
+      }
+    },
+    "reward": {
+      "ball_color": 3,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 3,
+        "number": 6
+      }
+    ]
+  },
+  {
+    "name": "妙蛙草",
+    "md5": "e450034454839cae0f4a30ea79ea427f",
+    "src": "card_image/妙蛙草2.png",
+    "level": 2,
+    "point": 3,
+    "evolution": {
+      "name": "妙蛙花",
+      "cost": {
+        "ball_color": 2,
+        "number": 4
+      }
+    },
+    "reward": {
+      "ball_color": 3,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 0,
+        "number": 4
+      },
+      {
+        "ball_color": 1,
+        "number": 4
+      },
+      {
+        "ball_color": 2,
+        "number": 1
+      }
+    ]
   }
 ]
