@@ -33,21 +33,21 @@
             </div>
 
             <div class="board-body">
-                <div class="deck-column">
-                    <div class="deck level-3-back">Lv3 牌堆</div>
-                    <div class="deck level-2-back">Lv2 牌堆</div>
-                    <div class="deck level-1-back">Lv1 牌堆</div>
-                    <div class="deck rare-back">稀有</div>
-                    <div class="deck legend-back">传说</div>
-                </div>
+                <div class="card-row">
+                    <div class="deck-column">
+                        <div class="deck level-1-back" aria-label="1 级牌堆"></div>
+                        <div class="deck level-2-back" aria-label="2 级牌堆"></div>
+                        <div class="deck level-3-back" aria-label="3 级牌堆"></div>
+                        <div class="deck rare-back" aria-label="稀有牌堆"></div>
+                        <div class="deck legend-back" aria-label="传说牌堆"></div>
+                    </div>
 
-                <div class="market-panel">
-                    <div class="panel-title">公共展示区</div>
-                    <div id="market" class="market-board"></div>
+                    <div class="market-panel">
+                        <div id="market" class="market-board"></div>
+                    </div>
                 </div>
 
                 <div class="token-panel">
-                    <div class="panel-title">公共宝可梦球</div>
                     <div id="tokenPool" class="token-pool"></div>
                     <div class="action-buttons">
                         <button id="actTake3" class="btn">拿取 3 种</button>

@@ -132,9 +132,8 @@ function buildPlaceholderMarket(){
   for (let i=0;i<4;i++) slots.push(makePlaceholderCard(`L1-${i}-${Date.now()}`, 1));
   for (let i=0;i<4;i++) slots.push(makePlaceholderCard(`L2-${i}-${Date.now()}`, 2));
   for (let i=0;i<4;i++) slots.push(makePlaceholderCard(`L3-${i}-${Date.now()}`, 3));
-  // 你规则里有稀有/传说，这里也给 4+4 占位
-  for (let i=0;i<4;i++) slots.push(makePlaceholderCard(`R-${i}-${Date.now()}`, 4));
-  for (let i=0;i<4;i++) slots.push(makePlaceholderCard(`LEG-${i}-${Date.now()}`, 5));
+  for (let i=0;i<1;i++) slots.push(makePlaceholderCard(`R-${i}-${Date.now()}`, 4));
+  for (let i=0;i<1;i++) slots.push(makePlaceholderCard(`LEG-${i}-${Date.now()}`, 5));
   return slots;
 }
 
@@ -593,11 +592,11 @@ function renderMarket(){
   el.market.innerHTML = "";
 
   const groups = [
-    { level: 3, title: "Lv3", deckClass: "level-3-back" },
-    { level: 2, title: "Lv2", deckClass: "level-2-back" },
-    { level: 1, title: "Lv1", deckClass: "level-1-back" },
-    { level: 4, title: "稀有", deckClass: "rare-back" },
-    { level: 5, title: "传说", deckClass: "legend-back" },
+    { level: 1, deckClass: "level-1-back", slots: 4 },
+    { level: 2, deckClass: "level-2-back", slots: 4 },
+    { level: 3, deckClass: "level-3-back", slots: 4 },
+    { level: 4, deckClass: "rare-back", slots: 1 },
+    { level: 5, deckClass: "legend-back", slots: 1 },
   ];
 
   for (const group of groups){
@@ -606,15 +605,25 @@ function renderMarket(){
 
     const deck = document.createElement("div");
     deck.className = `deck ${group.deckClass}`;
-    deck.textContent = group.title;
     section.appendChild(deck);
 
     const grid = document.createElement("div");
     grid.className = "market";
+    grid.style.gridTemplateColumns = `repeat(${group.slots}, minmax(0, 1fr))`;
 
-    const cards = state.market.slots.filter(c => c.level === group.level);
-    for (const card of cards){
-      grid.appendChild(renderMarketCard(card));
+    const cards = state.market.slots.filter(c => c.level === group.level).slice(0, group.slots);
+    for (let i=0; i<group.slots; i++){
+      const card = cards[i];
+      if (card){
+        grid.appendChild(renderMarketCard(card));
+      } else {
+        const placeholder = document.createElement("div");
+        placeholder.className = "market-card placeholder";
+        const visual = document.createElement("div");
+        visual.className = "market-visual";
+        placeholder.appendChild(visual);
+        grid.appendChild(placeholder);
+      }
     }
 
     section.appendChild(grid);
@@ -635,8 +644,6 @@ function renderMarketCard(card){
     img.src = card.src;
     img.alt = card.name || "卡牌";
     visual.appendChild(img);
-  } else {
-    visual.textContent = `Lv${card.level}`;
   }
   div.appendChild(visual);
 
