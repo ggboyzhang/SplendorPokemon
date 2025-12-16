@@ -1146,5 +1146,61 @@
         "number": 2
       }
     ]
+  },
+  {
+    "name": "火恐龙",
+    "md5": "f2d4efdec0937f407112ae4ea3714e48",
+    "src": "card_image/火恐龙1",
+    "level": 2,
+    "point": 3,
+    "evolution": {
+      "name": "喷火龙",
+      "cost": {
+        "ball_color": 0,
+        "number": 4
+      }
+    },
+    "reward": {
+      "ball_color": 2,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 3,
+        "number": 4
+      },
+      {
+        "ball_color": 4,
+        "number": 4
+      },
+      {
+        "ball_color": 0,
+        "number": 1
+      }
+    ]
+  },
+  {
+    "name": "火恐龙",
+    "md5": "89c77eb672f1115ce02d19f4a48a9968",
+    "src": "card_image/火恐龙2",
+    "level": 2,
+    "point": 3,
+    "evolution": {
+      "name": "喷火龙",
+      "cost": {
+        "ball_color": 0,
+        "number": 4
+      }
+    },
+    "reward": {
+      "ball_color": 2,
+      "number": 1
+    },
+    "cost": [
+      {
+        "ball_color": 2,
+        "number": 6
+      }
+    ]
   }
 ]
