@@ -591,46 +591,90 @@ function renderTokenPool(){
 function renderMarket(){
   if (!el.market) return;
   el.market.innerHTML = "";
-  for (const card of state.market.slots){
-    const div = document.createElement("div");
-    div.className = "card" + (ui.selectedMarketCardId === card.id ? " selected" : "");
-    div.dataset.cardId = card.id;
 
-    const name = document.createElement("div");
-    name.className = "name";
-    name.textContent = card.name || "(未命名)";
-    div.appendChild(name);
+  const groups = [
+    { level: 3, title: "Lv3", deckClass: "level-3-back" },
+    { level: 2, title: "Lv2", deckClass: "level-2-back" },
+    { level: 1, title: "Lv1", deckClass: "level-1-back" },
+    { level: 4, title: "稀有", deckClass: "rare-back" },
+    { level: 5, title: "传说", deckClass: "legend-back" },
+  ];
 
-    const meta = document.createElement("div");
-    meta.className = "meta";
-    meta.innerHTML = `
-      <span>Lv ${card.level}</span>
-      <span>奖杯 ${card.point}</span>
-      <span>ID ${String(card.id).slice(0,10)}…</span>
-    `;
-    div.appendChild(meta);
+  for (const group of groups){
+    const section = document.createElement("div");
+    section.className = "market-section";
 
-    const cost = document.createElement("div");
-    cost.className = "cost";
-    if (Array.isArray(card.cost)){
-      for (const it of card.cost){
-        const pip = document.createElement("span");
-        pip.className = "pip";
-        pip.textContent = `${BALL_NAMES[it.ball_color] ?? "?"} ×${it.number}`;
-        cost.appendChild(pip);
-      }
+    const deck = document.createElement("div");
+    deck.className = `deck ${group.deckClass}`;
+    deck.textContent = group.title;
+    section.appendChild(deck);
+
+    const grid = document.createElement("div");
+    grid.className = "market";
+
+    const cards = state.market.slots.filter(c => c.level === group.level);
+    for (const card of cards){
+      grid.appendChild(renderMarketCard(card));
     }
-    div.appendChild(cost);
 
-    div.addEventListener("click", () => {
-      ui.selectedReservedCard = null;
-      ui.selectedMarketCardId = (ui.selectedMarketCardId === card.id) ? null : card.id;
-      renderMarket();
-      renderPlayers(); // 让玩家保留区取消高亮
-    });
-
-    el.market.appendChild(div);
+    section.appendChild(grid);
+    el.market.appendChild(section);
   }
+}
+
+function renderMarketCard(card){
+  const div = document.createElement("div");
+  div.className = "market-card" + (ui.selectedMarketCardId === card.id ? " selected" : "");
+  div.dataset.cardId = card.id;
+
+  const visual = document.createElement("div");
+  visual.className = "market-visual";
+  if (card.src){
+    const img = document.createElement("img");
+    img.className = "market-img";
+    img.src = card.src;
+    img.alt = card.name || "卡牌";
+    visual.appendChild(img);
+  } else {
+    visual.textContent = `Lv${card.level}`;
+  }
+  div.appendChild(visual);
+
+  const meta = document.createElement("div");
+  meta.className = "market-meta";
+
+  const name = document.createElement("div");
+  name.className = "market-name";
+  name.textContent = card.name || "(未命名)";
+  meta.appendChild(name);
+
+  const tags = document.createElement("div");
+  tags.className = "market-tags";
+  tags.innerHTML = `Lv ${card.level} · ⭐ ${card.point}`;
+  meta.appendChild(tags);
+
+  const cost = document.createElement("div");
+  cost.className = "market-cost";
+  if (Array.isArray(card.cost)){
+    for (const it of card.cost){
+      const pip = document.createElement("span");
+      pip.className = "cost-chip";
+      pip.textContent = `${BALL_NAMES[it.ball_color] ?? "?"} ×${it.number}`;
+      cost.appendChild(pip);
+    }
+  }
+  meta.appendChild(cost);
+
+  div.appendChild(meta);
+
+  div.addEventListener("click", () => {
+    ui.selectedReservedCard = null;
+    ui.selectedMarketCardId = (ui.selectedMarketCardId === card.id) ? null : card.id;
+    renderMarket();
+    renderPlayers();
+  });
+
+  return div;
 }
 
 function renderPlayers(){
@@ -682,7 +726,7 @@ function renderZone(title, cards, opts){
 
   for (const card of cards){
     const m = document.createElement("div");
-    m.className = "mini";
+    m.className = "mini-card";
     const selected = ui.selectedReservedCard &&
       ui.selectedReservedCard.cardId === card.id &&
       ui.selectedReservedCard.playerIndex === opts.playerIndex;
@@ -690,7 +734,10 @@ function renderZone(title, cards, opts){
 
     m.innerHTML = `
       <div class="t">${escapeHtml(card.name || "(未命名)")}</div>
-      <div class="s">Lv ${card.level} · 奖杯 ${card.point}</div>
+      <div class="s">
+        <span class="level-chip">Lv ${card.level}</span>
+        <span class="point-chip">⭐ ${card.point}</span>
+      </div>
     `;
 
     if (opts.clickable){
@@ -729,7 +776,7 @@ function renderTokenZone(tokens){
 
   for (let c=0;c<BALL_NAMES.length;c++){
     const t = document.createElement("div");
-    t.className = "mini";
+    t.className = "token-mini";
     t.innerHTML = `
       <div class="t">${BALL_NAMES[c]}</div>
       <div class="s">× ${tokens[c]}</div>

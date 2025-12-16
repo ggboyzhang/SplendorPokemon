@@ -12,7 +12,7 @@
             <div class="logo">◆</div>
             <div>
                 <div class="title">璀璨宝石（Pokémon）</div>
-                <div class="sub">原生 HTML / Mahjong-style Table</div>
+                <div class="sub">Hotseat / 2-4 人轮换桌面</div>
             </div>
         </div>
 
@@ -20,149 +20,50 @@
             <button id="btnNew" class="btn">新游戏</button>
             <button id="btnSave" class="btn">存档</button>
             <button id="btnLoad" class="btn">读档</button>
-
             <button id="btnResetStorage" class="btn danger">清空本地存档</button>
         </div>
     </header>
 
     <main class="app">
-        <!-- 左侧：麻将桌式打牌区域 -->
-        <section class="table-area">
-
-            <!-- 上方电脑玩家 -->
-            <div class="player-area top" id="player-top">
-                <div class="player-board horizontal">
-                    <div class="player-section reserved-section">
-                        <div class="section-header">保留区</div>
-                        <div class="reserved-stack"></div>
-                    </div>
-                    <div class="player-section info-section">
-                        <div class="section-header">信息</div>
-                        <div class="score-line">⭐ <span>0</span></div>
-                        <div class="token-grid"></div>
-                    </div>
-                    <div class="player-section owned-section">
-                        <div class="section-header">已获得卡牌</div>
-                    </div>
-                </div>
+        <section class="board">
+            <div class="board-header">
+                <div class="badge" id="turnBadge">回合：1</div>
+                <div class="badge" id="currentPlayerBadge">当前玩家</div>
+                <div class="badge" id="trophyBadge">当前玩家奖杯：0</div>
             </div>
 
-            <!-- 左侧电脑玩家（竖向） -->
-            <div class="player-area left" id="player-left">
-                <div class="player-board vertical">
-                    <div class="player-section reserved-section">
-                        <div class="section-header">保留区</div>
-                        <div class="reserved-stack"></div>
-                    </div>
-                    <div class="player-section info-section">
-                        <div class="section-header">信息</div>
-                        <div class="score-line">⭐ <span>0</span></div>
-                        <div class="token-grid"></div>
-                    </div>
-                    <div class="player-section owned-section">
-                        <div class="section-header">已获得卡牌</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 中央牌桌 -->
-            <div class="center-area">
-
-                <div class="card-zones">
-
-                    <div class="level-stack">
-                        <!-- Lv1 -->
-                        <div class="zone level-1">
-                            <div class="deck level-1-back">Lv1</div>
-                            <div class="display">
-                                <div class="slot"></div><div class="slot"></div>
-                                <div class="slot"></div><div class="slot"></div>
-                            </div>
-                        </div>
-
-                        <!-- Lv2 -->
-                        <div class="zone level-2">
-                            <div class="deck level-2-back">Lv2</div>
-                            <div class="display">
-                                <div class="slot"></div><div class="slot"></div>
-                                <div class="slot"></div><div class="slot"></div>
-                            </div>
-                        </div>
-
-                        <!-- Lv3 -->
-                        <div class="zone level-3">
-                            <div class="deck level-3-back">Lv3</div>
-                            <div class="display">
-                                <div class="slot"></div><div class="slot"></div>
-                                <div class="slot"></div><div class="slot"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="special-stack">
-                        <!-- 稀有 -->
-                        <div class="zone rare">
-                            <div class="deck rare-back">稀有</div>
-                            <div class="display">
-                                <div class="slot"></div>
-                            </div>
-                        </div>
-
-                        <!-- 传说 -->
-                        <div class="zone legend">
-                            <div class="deck legend-back">传说</div>
-                            <div class="display">
-                                <div class="slot"></div>
-                            </div>
-                        </div>
-                    </div>
-
+            <div class="board-body">
+                <div class="deck-column">
+                    <div class="deck level-3-back">Lv3 牌堆</div>
+                    <div class="deck level-2-back">Lv2 牌堆</div>
+                    <div class="deck level-1-back">Lv1 牌堆</div>
+                    <div class="deck rare-back">稀有</div>
+                    <div class="deck legend-back">传说</div>
                 </div>
 
-                <!-- Token 公共区 -->
-                <div class="token-zone">
+                <div class="market-panel">
+                    <div class="panel-title">公共展示区</div>
+                    <div id="market" class="market-board"></div>
+                </div>
+
+                <div class="token-panel">
+                    <div class="panel-title">公共宝可梦球</div>
                     <div id="tokenPool" class="token-pool"></div>
-                    <button id="actEndTurn" class="btn end-turn">结束回合</button>
-                </div>
-
-            </div>
-
-            <!-- 右侧电脑玩家（竖向） -->
-            <div class="player-area right" id="player-right">
-                <div class="player-board vertical">
-                    <div class="player-section reserved-section">
-                        <div class="section-header">保留区</div>
-                        <div class="reserved-stack"></div>
-                    </div>
-                    <div class="player-section info-section">
-                        <div class="section-header">信息</div>
-                        <div class="score-line">⭐ <span>0</span></div>
-                        <div class="token-grid"></div>
-                    </div>
-                    <div class="player-section owned-section">
-                        <div class="section-header">已获得卡牌</div>
+                    <div class="action-buttons">
+                        <button id="actTake3" class="btn">拿取 3 种</button>
+                        <button id="actTake2" class="btn">拿取 2 同色</button>
+                        <button id="actReserve" class="btn">保留卡牌</button>
+                        <button id="actBuy" class="btn primary">购买/捕捉</button>
+                        <button id="actEvolve" class="btn">进化</button>
+                        <button id="actEndTurn" class="btn end-turn">结束回合</button>
                     </div>
                 </div>
             </div>
+        </section>
 
-            <!-- 下方玩家 -->
-            <div class="player-area bottom" id="player-bottom">
-                <div class="player-board horizontal">
-                    <div class="player-section reserved-section">
-                        <div class="section-header">保留区</div>
-                        <div class="reserved-stack"></div>
-                    </div>
-                    <div class="player-section info-section">
-                        <div class="section-header">信息</div>
-                        <div class="score-line">⭐ <span>0</span></div>
-                        <div class="token-grid"></div>
-                    </div>
-                    <div class="player-section owned-section">
-                        <div class="section-header">已获得卡牌</div>
-                    </div>
-                </div>
-            </div>
-
+        <section class="players-panel">
+            <div class="panel-title">玩家一览</div>
+            <div id="players" class="players-grid"></div>
         </section>
     </main>
 
@@ -197,6 +98,7 @@
             </div>
         </div>
     </div>
+
     <script src="game.js"></script>
 </body>
 </html>
