@@ -408,7 +408,28 @@ body.modal-open .topbar {
     border-radius: 12px;
     display: grid;
     place-items: center;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    overflow: hidden;
 }
+
+.deck > * { position: relative; z-index: 1; }
+
+.deck::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.4) 100%);
+}
+
+.deck.level-1-back { background-image: url('card_image/level_1.png'); }
+.deck.level-2-back { background-image: url('card_image/level_2.png'); }
+.deck.level-3-back { background-image: url('card_image/level_3.png'); }
+.deck.rare-back { background-image: url('card_image/rare.png'); }
+.deck.legend-back { background-image: url('card_image/legend.png'); }
+
+.deck span, .deck { color: #f8fafc; font-weight: 700; text-shadow: 0 1px 4px rgba(0,0,0,0.6); }
 
 .display {
     display: flex;
@@ -431,11 +452,49 @@ body.modal-open .topbar {
     padding-left: 8px;
 }
 
-.token-slot {
-    width: 42px;
-    height: 42px;
+.token-pool {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.token-chip {
+    position: relative;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
-    border: 1px solid var(--line);
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    display: grid;
+    place-items: center;
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.12), rgba(0,0,0,0.25));
+    cursor: pointer;
+    transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.token-chip.selected {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
+}
+
+.token-chip.ghost { opacity: 0.5; }
+
+.token-image {
+    width: 90%;
+    height: 90%;
+    object-fit: contain;
+}
+
+.count-badge {
+    position: absolute;
+    top: -4px;
+    right: -6px;
+    background: rgba(15, 118, 110, 0.95);
+    color: #ecfeff;
+    border-radius: 10px;
+    padding: 2px 6px;
+    font-size: 12px;
+    border: 1px solid rgba(45, 212, 191, 0.5);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
 
 .end-turn {

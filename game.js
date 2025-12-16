@@ -2,15 +2,31 @@
 
 // ========== 1) 枚举：精灵球 ==========
 const Ball = Object.freeze({
-  red_ball: 0,
-  pink_ball: 1,
-  blue_ball: 2,
-  yellow_ball: 3,
-  black_ball: 4,
-  purple_ball: 5,
+  poke_ball: 0,
+  heal_ball: 1,
+  great_ball: 2,
+  quick_ball: 3,
+  ultra_ball: 4,
+  master_ball: 5,
 });
 
-const BALL_NAMES = ["red_ball","pink_ball","blue_ball","yellow_ball","black_ball","purple_ball"];
+const BALL_KEYS = [
+  "poke_ball",
+  "heal_ball",
+  "great_ball",
+  "quick_ball",
+  "ultra_ball",
+  "master_ball",
+];
+const BALL_NAMES = ["精灵球", "治愈球", "超级球", "先机球", "高级球", "大师球"];
+const BALL_IMAGES = [
+  "token_image/精灵球.png",
+  "token_image/治愈球.png",
+  "token_image/超级球.png",
+  "token_image/先机球.png",
+  "token_image/高级球.png",
+  "token_image/大师球.png",
+];
 const STORAGE_KEY = "pokemon_splendor_save_v1";
 
 // ========== 2) DOM ==========
@@ -301,9 +317,9 @@ function actionReserve(){
   state.market.slots[idx] = makePlaceholderCard(`${card.level}-${Math.random().toString(16).slice(2)}-${Date.now()}`, card.level);
 
   // 拿 1 个大师球（紫）
-  if (state.tokenPool[Ball.purple_ball] > 0){
-    state.tokenPool[Ball.purple_ball] -= 1;
-    p.tokens[Ball.purple_ball] += 1;
+  if (state.tokenPool[Ball.master_ball] > 0){
+    state.tokenPool[Ball.master_ball] -= 1;
+    p.tokens[Ball.master_ball] += 1;
   }
 
   clampTokenLimit(p);
@@ -531,29 +547,35 @@ function renderAll(){
 }
 
 function renderBadges(){
+  if (!el.turnBadge || !el.currentPlayerBadge || !el.trophyBadge) return;
   el.turnBadge.textContent = `回合：${state.turn}`;
   el.currentPlayerBadge.textContent = `当前玩家：${currentPlayer().name}`;
   el.trophyBadge.textContent = `当前玩家奖杯：${totalTrophiesOfPlayer(currentPlayer())}`;
 }
 
 function renderTokenPool(){
+  if (!el.tokenPool) return;
   el.tokenPool.innerHTML = "";
-  for (let c=0;c<6;c++){
+  for (let c=0;c<BALL_NAMES.length;c++){
     const btn = document.createElement("div");
-    btn.className = "token" + (ui.selectedTokenColors.has(c) ? " selected" : "");
+    btn.className = "token-chip" + (ui.selectedTokenColors.has(c) ? " selected" : "");
     btn.dataset.color = String(c);
     btn.title = BALL_NAMES[c];
 
-    const label = document.createElement("div");
-    label.textContent = BALL_NAMES[c].replace("_ball","").toUpperCase();
-    label.style.fontWeight = "900";
-    label.style.fontSize = "11px";
-    btn.appendChild(label);
+    const img = document.createElement("img");
+    img.src = BALL_IMAGES[c];
+    img.alt = BALL_NAMES[c];
+    img.className = "token-image";
+    btn.appendChild(img);
 
-    const count = document.createElement("div");
-    count.className = "count";
-    count.textContent = String(state.tokenPool[c]);
-    btn.appendChild(count);
+    if (state.tokenPool[c] > 0){
+      const count = document.createElement("div");
+      count.className = "count-badge";
+      count.textContent = String(state.tokenPool[c]);
+      btn.appendChild(count);
+    } else {
+      btn.classList.add("ghost");
+    }
 
     btn.addEventListener("click", () => {
       // toggle selection
@@ -567,6 +589,7 @@ function renderTokenPool(){
 }
 
 function renderMarket(){
+  if (!el.market) return;
   el.market.innerHTML = "";
   for (const card of state.market.slots){
     const div = document.createElement("div");
@@ -611,6 +634,7 @@ function renderMarket(){
 }
 
 function renderPlayers(){
+  if (!el.players) return;
   el.players.innerHTML = "";
   state.players.forEach((p, idx) => {
     const wrap = document.createElement("div");
@@ -703,7 +727,7 @@ function renderTokenZone(tokens){
   const items = document.createElement("div");
   items.className = "zone-items";
 
-  for (let c=0;c<6;c++){
+  for (let c=0;c<BALL_NAMES.length;c++){
     const t = document.createElement("div");
     t.className = "mini";
     t.innerHTML = `
@@ -731,48 +755,48 @@ function closeModals(){
 }
 
 // ========== 11) 事件绑定 ==========
-el.btnNew.addEventListener("click", () => {
+if (el.btnNew) el.btnNew.addEventListener("click", () => {
   showModal(el.confirmNewGameModal);
 });
 
-el.btnSave.addEventListener("click", saveToLocal);
-el.btnLoad.addEventListener("click", loadFromLocal);
+if (el.btnSave) el.btnSave.addEventListener("click", saveToLocal);
+if (el.btnLoad) el.btnLoad.addEventListener("click", loadFromLocal);
 
-el.btnResetStorage.addEventListener("click", () => {
+if (el.btnResetStorage) el.btnResetStorage.addEventListener("click", () => {
   localStorage.removeItem(STORAGE_KEY);
   toast("已清空本地存档");
 });
 
-el.btnSaveAndNew.addEventListener("click", () => {
+if (el.btnSaveAndNew) el.btnSaveAndNew.addEventListener("click", () => {
   saveToLocal();
   showModal(el.playerCountModal);
 });
 
-el.btnNewWithoutSave.addEventListener("click", () => {
+if (el.btnNewWithoutSave) el.btnNewWithoutSave.addEventListener("click", () => {
   showModal(el.playerCountModal);
 });
 
-el.btnCancelNew.addEventListener("click", closeModals);
+if (el.btnCancelNew) el.btnCancelNew.addEventListener("click", closeModals);
 
-el.btnConfirmPlayerCount.addEventListener("click", () => {
+if (el.btnConfirmPlayerCount) el.btnConfirmPlayerCount.addEventListener("click", () => {
   const n = Number(el.playerCount.value);
   newGame(Number.isFinite(n) ? n : 4);
   toast("已开始新游戏");
   closeModals();
 });
 
-el.btnCancelPlayerCount.addEventListener("click", closeModals);
+if (el.btnCancelPlayerCount) el.btnCancelPlayerCount.addEventListener("click", closeModals);
 
-el.modalOverlay.addEventListener("click", closeModals);
+if (el.modalOverlay) el.modalOverlay.addEventListener("click", closeModals);
 
-el.btnReplaceOne.addEventListener("click", actionReplaceOnePlaceholder);
+if (el.btnReplaceOne) el.btnReplaceOne.addEventListener("click", actionReplaceOnePlaceholder);
 
-el.actTake3.addEventListener("click", actionTake3Different);
-el.actTake2.addEventListener("click", actionTake2Same);
-el.actReserve.addEventListener("click", actionReserve);
-el.actBuy.addEventListener("click", actionBuy);
-el.actEvolve.addEventListener("click", actionEvolvePlaceholder);
-el.actEndTurn.addEventListener("click", endTurn);
+if (el.actTake3) el.actTake3.addEventListener("click", actionTake3Different);
+if (el.actTake2) el.actTake2.addEventListener("click", actionTake2Same);
+if (el.actReserve) el.actReserve.addEventListener("click", actionReserve);
+if (el.actBuy) el.actBuy.addEventListener("click", actionBuy);
+if (el.actEvolve) el.actEvolve.addEventListener("click", actionEvolvePlaceholder);
+if (el.actEndTurn) el.actEndTurn.addEventListener("click", endTurn);
 
 // ========== 12) 启动 ==========
 (function boot(){

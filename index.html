@@ -73,7 +73,7 @@
                     <div class="level-stack">
                         <!-- Lv1 -->
                         <div class="zone level-1">
-                            <div class="deck">Lv1</div>
+                            <div class="deck level-1-back">Lv1</div>
                             <div class="display">
                                 <div class="slot"></div><div class="slot"></div>
                                 <div class="slot"></div><div class="slot"></div>
@@ -82,7 +82,7 @@
 
                         <!-- Lv2 -->
                         <div class="zone level-2">
-                            <div class="deck">Lv2</div>
+                            <div class="deck level-2-back">Lv2</div>
                             <div class="display">
                                 <div class="slot"></div><div class="slot"></div>
                                 <div class="slot"></div><div class="slot"></div>
@@ -91,7 +91,7 @@
 
                         <!-- Lv3 -->
                         <div class="zone level-3">
-                            <div class="deck">Lv3</div>
+                            <div class="deck level-3-back">Lv3</div>
                             <div class="display">
                                 <div class="slot"></div><div class="slot"></div>
                                 <div class="slot"></div><div class="slot"></div>
@@ -102,7 +102,7 @@
                     <div class="special-stack">
                         <!-- 稀有 -->
                         <div class="zone rare">
-                            <div class="deck">稀有</div>
+                            <div class="deck rare-back">稀有</div>
                             <div class="display">
                                 <div class="slot"></div>
                             </div>
@@ -110,7 +110,7 @@
 
                         <!-- 传说 -->
                         <div class="zone legend">
-                            <div class="deck">传说</div>
+                            <div class="deck legend-back">传说</div>
                             <div class="display">
                                 <div class="slot"></div>
                             </div>
@@ -121,12 +121,7 @@
 
                 <!-- Token 公共区 -->
                 <div class="token-zone">
-                    <div class="token-slot red"></div>
-                    <div class="token-slot pink"></div>
-                    <div class="token-slot blue"></div>
-                    <div class="token-slot yellow"></div>
-                    <div class="token-slot black"></div>
-                    <div class="token-slot purple"></div>
+                    <div id="tokenPool" class="token-pool"></div>
                     <button id="actEndTurn" class="btn end-turn">结束回合</button>
                 </div>
 
