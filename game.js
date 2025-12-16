@@ -115,10 +115,18 @@ let cardLibraryPromise = null;
 
 function loadCardLibrary(){
   if (!cardLibraryPromise){
-    cardLibraryPromise = fetch("cards.json").then(res => {
-      if (!res.ok) throw new Error("无法加载卡牌数据");
-      return res.json();
-    });
+    const url = new URL("cards.json", window.location.href).toString();
+
+    cardLibraryPromise = fetch(url, { cache: "no-cache" })
+      .then(res => {
+        if (!res.ok) throw new Error(`无法加载卡牌数据（${res.status}）`);
+        return res.json();
+      })
+      .catch(err => {
+        // 失败后允许重新尝试加载
+        cardLibraryPromise = null;
+        throw err;
+      });
   }
   return cardLibraryPromise;
 }
@@ -620,9 +628,10 @@ function renderAll(){
 
 function renderBadges(){
   if (!el.turnBadge || !el.currentPlayerBadge || !el.trophyBadge) return;
+  const p = state.players[state.currentPlayerIndex];
   el.turnBadge.textContent = `回合：${state.turn}`;
-  el.currentPlayerBadge.textContent = `当前玩家：${currentPlayer().name}`;
-  el.trophyBadge.textContent = `当前玩家奖杯：${totalTrophiesOfPlayer(currentPlayer())}`;
+  el.currentPlayerBadge.textContent = p ? `当前玩家：${p.name}` : "当前玩家";
+  el.trophyBadge.textContent = p ? `当前玩家奖杯：${totalTrophiesOfPlayer(p)}` : "当前玩家奖杯：0";
 }
 
 function renderTokenPool(){
@@ -931,8 +940,11 @@ if (el.actEndTurn) el.actEndTurn.addEventListener("click", endTurn);
   }catch(err){
     console.error("加载游戏失败", err);
     if (el.currentPlayerBadge){
-      el.currentPlayerBadge.textContent = "资源加载失败，请检查 cards.json";
+      const hint = err?.message ? `资源加载失败：${err.message}` : "资源加载失败，请检查 cards.json";
+      el.currentPlayerBadge.textContent = hint;
     }
+    // 即使卡牌未加载成功，也尝试渲染现有 UI，方便用户看到错误提示
+    renderAll();
   }
 })();
 
