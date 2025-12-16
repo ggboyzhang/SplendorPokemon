@@ -6,7 +6,7 @@
     --text: #e5e7eb;
     --muted: #9ca3af;
     --line: #1f2937;
-    --card-w: clamp(70px, 8vw, 96px);
+    --card-w: clamp(72px, 7.6vw, 98px);
     --card-ratio: calc(1020 / 652); /* 652:1020 source art */
     --card-h: calc(var(--card-w) * var(--card-ratio));
     --token-d: clamp(34px, 4.6vw, 46px);
@@ -117,22 +117,8 @@ body {
     height: 100%;
 }
 
-.card-row {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 8px;
-    min-height: 0;
-    align-items: start;
-}
-
-.deck-column {
-    display: grid;
-    gap: 8px;
-    align-content: start;
-}
-
 .deck {
-    width: calc(var(--card-w) * 0.9);
+    width: var(--card-w);
     aspect-ratio: 652 / 1020;
     border: 2px solid var(--line);
     border-radius: 12px;
@@ -154,6 +140,7 @@ body {
 .deck.level-3-back { background-image: url('card_image/level_3.png'); }
 .deck.rare-back { background-image: url('card_image/rare.png'); }
 .deck.legend-back { background-image: url('card_image/legend.png'); }
+.deck.ghost { opacity: 0.35; }
 
 .market-panel, .token-panel {
     background: rgba(10, 12, 20, 0.55);
@@ -201,9 +188,12 @@ body {
     transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
     cursor: pointer;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
 }
 .market-card:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(0,0,0,0.35); }
 .market-card.selected { border-color: rgba(94, 234, 212, 0.65); box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.35); }
+.market-card.placeholder { background: rgba(15, 23, 42, 0.55); border-style: dashed; cursor: default; }
 
 .market-visual {
     width: 100%;
@@ -219,16 +209,7 @@ body {
     object-fit: contain;
 }
 
-.market-meta { padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 4px; }
-.market-name { font-weight: 700; }
-.market-tags { color: var(--muted); font-size: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
-.market-cost { display: flex; flex-wrap: wrap; gap: 6px; font-size: 12px; color: #cbd5e1; }
-.cost-chip {
-    padding: 2px 6px;
-    border-radius: 8px;
-    background: rgba(148, 163, 184, 0.16);
-    border: 1px solid rgba(148, 163, 184, 0.2);
-}
+.market-meta, .market-name, .market-tags, .market-cost, .cost-chip { display: none; }
 
 .token-pool { display: flex; gap: 10px; flex-wrap: wrap; }
 .token-chip {
