@@ -54,6 +54,11 @@ const el = {
   btnConfirmPlayerCount: $("#btnConfirmPlayerCount"),
   btnCancelPlayerCount: $("#btnCancelPlayerCount"),
 
+  handModal: $("#handModal"),
+  handModalTitle: $("#handModalTitle"),
+  handModalBody: $("#handModalBody"),
+  btnCloseHandModal: $("#btnCloseHandModal"),
+
   turnBadge: $("#turnBadge"),
   currentPlayerBadge: $("#currentPlayerBadge"),
   trophyBadge: $("#trophyBadge"),
@@ -78,6 +83,7 @@ let ui = {
   selectedTokenColors: new Set(), // for take actions
   selectedMarketCardId: null,     // for reserve/buy
   selectedReservedCard: null,     // {playerIndex, cardId}
+  handPreviewPlayerIndex: null,
 };
 
 function makeEmptyState(){
@@ -632,6 +638,9 @@ function renderAll(){
   renderMarket();
   renderPlayers();
   renderBadges();
+  if (el.handModal && !el.handModal.classList.contains("hidden")){
+    renderHandModal(ui.handPreviewPlayerIndex);
+  }
 }
 
 function renderBadges(){
@@ -805,6 +814,27 @@ function renderMarketCard(card){
   return div;
 }
 
+function renderMiniCard(card, selected){
+  const mini = renderCardVisual(card, "mini-card");
+  if (selected) mini.classList.add("selected");
+  return mini;
+}
+
+function renderCardVisual(card, className){
+  const div = document.createElement("div");
+  div.className = className + (card?.src ? "" : " card-missing");
+
+  if (card?.src){
+    const img = document.createElement("img");
+    img.src = card.src;
+    img.alt = card.name || "卡牌";
+    img.loading = "lazy";
+    div.appendChild(img);
+  }
+
+  return div;
+}
+
 function renderPlayers(){
   if (!el.players) return;
   el.players.innerHTML = "";
@@ -831,8 +861,8 @@ function renderPlayers(){
     const zones = document.createElement("div");
     zones.className = "zonegrid";
 
-    zones.appendChild(renderZone("手牌区（已捕捉展示区）", p.hand, { clickable:false }));
-    zones.appendChild(renderZone("保留区（点击可购买）", p.reserved, { clickable:true, playerIndex: idx }));
+    zones.appendChild(renderHandZone(p.hand, idx));
+    zones.appendChild(renderReserveZone(p.reserved, idx));
     zones.appendChild(renderTokenZone(p.tokens));
 
     wrap.appendChild(zones);
@@ -840,49 +870,54 @@ function renderPlayers(){
   });
 }
 
-function renderZone(title, cards, opts){
+function renderHandZone(cards, playerIndex){
   const zone = document.createElement("div");
-  zone.className = "zone";
-
-  const zt = document.createElement("div");
-  zt.className = "zone-title";
-  zt.innerHTML = `<span>${title}</span><span class="pip">数量 ${cards.length}</span>`;
-  zone.appendChild(zt);
+  zone.className = "zone hand-zone";
 
   const items = document.createElement("div");
-  items.className = "zone-items";
+  items.className = "zone-items hand-items";
+
+  const displayCards = cards.slice(0, 5);
+  const offset = 16;
+
+  displayCards.forEach((card, idx) => {
+    const mini = renderMiniCard(card, false);
+    mini.style.left = `${idx * offset}px`;
+    mini.style.zIndex = String(1 + idx);
+    items.appendChild(mini);
+  });
+
+  zone.appendChild(items);
+  zone.addEventListener("click", () => openHandModal(playerIndex));
+  return zone;
+}
+
+function renderReserveZone(cards, playerIndex){
+  const zone = document.createElement("div");
+  zone.className = "zone reserve-zone";
+
+  const items = document.createElement("div");
+  items.className = "zone-items reserve-items";
 
   for (const card of cards){
-    const m = document.createElement("div");
-    m.className = "mini-card";
     const selected = ui.selectedReservedCard &&
       ui.selectedReservedCard.cardId === card.id &&
-      ui.selectedReservedCard.playerIndex === opts.playerIndex;
-    if (selected) m.style.boxShadow = "0 0 0 2px rgba(245,158,11,0.65)";
+      ui.selectedReservedCard.playerIndex === playerIndex;
 
-    m.innerHTML = `
-      <div class="t">${escapeHtml(card.name || "(未命名)")}</div>
-      <div class="s">
-        <span class="level-chip">Lv ${card.level}</span>
-        <span class="point-chip">⭐ ${card.point}</span>
-      </div>
-    `;
+    const mini = renderMiniCard(card, selected);
+    mini.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      ui.selectedMarketCardId = null;
+      const same = ui.selectedReservedCard &&
+        ui.selectedReservedCard.cardId === card.id &&
+        ui.selectedReservedCard.playerIndex === playerIndex;
 
-    if (opts.clickable){
-      m.addEventListener("click", () => {
-        // 只允许点击当前玩家自己的保留区来买
-        ui.selectedMarketCardId = null;
-        const same = ui.selectedReservedCard &&
-          ui.selectedReservedCard.cardId === card.id &&
-          ui.selectedReservedCard.playerIndex === opts.playerIndex;
+      ui.selectedReservedCard = same ? null : { playerIndex, cardId: card.id };
+      renderPlayers();
+      renderMarket();
+    });
 
-        ui.selectedReservedCard = same ? null : { playerIndex: opts.playerIndex, cardId: card.id };
-        renderPlayers();
-        renderMarket();
-      });
-    }
-
-    items.appendChild(m);
+    items.appendChild(mini);
   }
 
   zone.appendChild(items);
@@ -891,16 +926,10 @@ function renderZone(title, cards, opts){
 
 function renderTokenZone(tokens){
   const zone = document.createElement("div");
-  zone.className = "zone";
-
-  const total = tokens.reduce((a,b)=>a+b,0);
-  const zt = document.createElement("div");
-  zt.className = "zone-title";
-  zt.innerHTML = `<span>token 区</span><span class="pip">${total}/10</span>`;
-  zone.appendChild(zt);
+  zone.className = "zone token-zone";
 
   const items = document.createElement("div");
-  items.className = "zone-items";
+  items.className = "zone-items token-items";
 
   for (let c=0;c<BALL_NAMES.length;c++){
     const t = document.createElement("div");
@@ -915,6 +944,94 @@ function renderTokenZone(tokens){
   return zone;
 }
 
+function renderFullCard(card){
+  return renderCardVisual(card, "full-card");
+}
+
+function renderCardStack(card){
+  const stack = document.createElement("div");
+  stack.className = "card-stack";
+
+  const main = renderFullCard(card);
+  stack.appendChild(main);
+
+  const underCards = getStackedCards(card);
+  underCards.forEach((under, idx) => {
+    const underEl = renderFullCard(under);
+    underEl.classList.add("stacked-card");
+    underEl.style.top = `${14 * (idx + 1)}px`;
+    underEl.style.left = `${(idx + 1) * 18}px`;
+    underEl.style.zIndex = String(idx + 1);
+    stack.appendChild(underEl);
+  });
+
+  return stack;
+}
+
+function getStackedCards(card){
+  return card?.underCards || card?.stackedCards || card?.consumedCards || [];
+}
+
+function openHandModal(playerIndex){
+  ui.handPreviewPlayerIndex = playerIndex;
+  renderHandModal(playerIndex);
+  showModal(el.handModal);
+}
+
+function renderHandModal(playerIndex = ui.handPreviewPlayerIndex){
+  if (!el.handModalBody) return;
+  if (playerIndex === null || playerIndex === undefined) return;
+  const player = state.players[playerIndex];
+  if (!player) return;
+
+  el.handModalTitle.textContent = `${player.name} 的卡牌`;
+  el.handModalBody.innerHTML = "";
+
+  const groups = groupCardsByReward(player.hand);
+  const order = [...BALL_NAMES.map((_, i) => i), -1];
+  let hasContent = false;
+
+  for (const color of order){
+    const list = groups[color] || [];
+    if (!list.length) continue;
+    hasContent = true;
+
+    const section = document.createElement("div");
+    section.className = "hand-group";
+
+    const title = document.createElement("div");
+    title.className = "hand-group-title";
+    title.textContent = color >= 0 ? `${BALL_NAMES[color]} 奖励` : "未分类";
+    section.appendChild(title);
+
+    const grid = document.createElement("div");
+    grid.className = "hand-group-grid";
+    list.forEach(card => {
+      grid.appendChild(renderCardStack(card));
+    });
+
+    section.appendChild(grid);
+    el.handModalBody.appendChild(section);
+  }
+
+  if (!hasContent){
+    const hint = document.createElement("div");
+    hint.className = "empty-hint";
+    hint.textContent = "暂无卡牌";
+    el.handModalBody.appendChild(hint);
+  }
+}
+
+function groupCardsByReward(cards){
+  const groups = {};
+  cards.forEach(card => {
+    const color = card?.reward?.ball_color ?? -1;
+    if (!groups[color]) groups[color] = [];
+    groups[color].push(card);
+  });
+  return groups;
+}
+
 function showModal(modal){
   document.querySelectorAll(".modal").forEach(m => m.classList.add("hidden"));
   if (!modal) return;
@@ -927,6 +1044,7 @@ function closeModals(){
   document.querySelectorAll(".modal").forEach(m => m.classList.add("hidden"));
   el.modalOverlay.classList.add("hidden");
   document.body.classList.remove("modal-open");
+  ui.handPreviewPlayerIndex = null;
 }
 
 // ========== 11) 事件绑定 ==========
@@ -961,6 +1079,7 @@ if (el.btnConfirmPlayerCount) el.btnConfirmPlayerCount.addEventListener("click",
 });
 
 if (el.btnCancelPlayerCount) el.btnCancelPlayerCount.addEventListener("click", closeModals);
+if (el.btnCloseHandModal) el.btnCloseHandModal.addEventListener("click", closeModals);
 
 if (el.modalOverlay) el.modalOverlay.addEventListener("click", closeModals);
 
