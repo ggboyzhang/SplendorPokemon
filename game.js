@@ -63,6 +63,11 @@ const el = {
   handModalBody: $("#handModalBody"),
   btnCloseHandModal: $("#btnCloseHandModal"),
 
+  tokenReturnModal: $("#tokenReturnModal"),
+  tokenReturnInfo: $("#tokenReturnInfo"),
+  tokenReturnList: $("#tokenReturnList"),
+  btnConfirmTokenReturn: $("#btnConfirmTokenReturn"),
+
   errorBanner: $("#errorBanner"),
 
   actTake3: $("#actTake3"),
@@ -87,6 +92,7 @@ let ui = {
   selectedReservedCard: null,     // {playerIndex, cardId}
   handPreviewPlayerIndex: null,
   errorMessage: "",
+  tokenReturn: null,              // { playerIndex, required, selected: number[6] }
 };
 
 let cardLibraryData = null;
@@ -345,20 +351,107 @@ function canTakeTwoSame(color){
 }
 
 function clampTokenLimit(p){
-  // 超过 10 必须弃到 10（这里给一个最简单策略：从最多的颜色开始丢）
-  let total = totalTokensOfPlayer(p);
-  if (total <= 10) return;
+  const required = totalTokensOfPlayer(p) - 10;
+  if (required <= 0) return false;
 
-  while (total > 10){
-    let idx = 0;
-    for (let i=1;i<6;i++){
-      if (p.tokens[i] > p.tokens[idx]) idx = i;
-    }
-    if (p.tokens[idx] <= 0) break;
-    p.tokens[idx] -= 1;
-    state.tokenPool[idx] += 1;
-    total -= 1;
+  const playerIndex = state.players.indexOf(p);
+  if (playerIndex < 0) return false;
+
+  ui.tokenReturn = {
+    playerIndex,
+    required,
+    selected: [0,0,0,0,0,0],
+  };
+
+  renderTokenReturnModal();
+  showModal(el.tokenReturnModal);
+  return true;
+}
+
+function handleTokenReturnSelection(btn){
+  if (!ui.tokenReturn) return;
+  const color = Number(btn.dataset.color);
+  if (!Number.isInteger(color)) return;
+
+  const selectedTotal = ui.tokenReturn.selected.reduce((a,b)=>a+b,0);
+  if (btn.classList.contains("selected")){
+    btn.classList.remove("selected");
+    ui.tokenReturn.selected[color] = Math.max(0, ui.tokenReturn.selected[color] - 1);
+  }else{
+    if (selectedTotal >= ui.tokenReturn.required) return;
+    btn.classList.add("selected");
+    ui.tokenReturn.selected[color] += 1;
   }
+
+  updateTokenReturnInfo();
+}
+
+function updateTokenReturnInfo(){
+  if (!ui.tokenReturn) return;
+  const ctx = ui.tokenReturn;
+  const player = state.players[ctx.playerIndex];
+  if (!player) return;
+
+  const selectedTotal = ctx.selected.reduce((a,b)=>a+b,0);
+  if (el.tokenReturnInfo){
+    el.tokenReturnInfo.textContent = `你持有 ${totalTokensOfPlayer(player)} 个精灵球标记，需要归还 ${ctx.required} 个（已选择 ${selectedTotal}/${ctx.required}）`;
+  }
+  if (el.btnConfirmTokenReturn){
+    el.btnConfirmTokenReturn.disabled = selectedTotal !== ctx.required;
+  }
+}
+
+function renderTokenReturnModal(){
+  if (!ui.tokenReturn || !el.tokenReturnList) return;
+  const ctx = ui.tokenReturn;
+  const player = state.players[ctx.playerIndex];
+  if (!player){
+    ui.tokenReturn = null;
+    closeModals({ force: true });
+    return;
+  }
+
+  el.tokenReturnList.innerHTML = "";
+  player.tokens.forEach((count, color) => {
+    for (let i=0;i<count;i++){
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "token-mini token-return-chip";
+      btn.dataset.color = String(color);
+
+      const img = document.createElement("img");
+      img.src = BALL_IMAGES[color];
+      img.alt = BALL_NAMES[color];
+      btn.appendChild(img);
+
+      btn.addEventListener("click", () => handleTokenReturnSelection(btn));
+      el.tokenReturnList.appendChild(btn);
+    }
+  });
+
+  updateTokenReturnInfo();
+}
+
+function confirmTokenReturn(){
+  if (!ui.tokenReturn) return;
+  const ctx = ui.tokenReturn;
+  const player = state.players[ctx.playerIndex];
+  if (!player) return;
+
+  const selectedTotal = ctx.selected.reduce((a,b)=>a+b,0);
+  if (selectedTotal !== ctx.required) return;
+
+  ctx.selected.forEach((count, color) => {
+    if (count > 0){
+      player.tokens[color] -= count;
+      state.tokenPool[color] += count;
+    }
+  });
+
+  ui.tokenReturn = null;
+  closeModals({ force: true });
+  renderAll();
+  toast(`已归还 ${selectedTotal} 个精灵球标记`);
 }
 
 function canAfford(p, card){
@@ -795,7 +888,10 @@ function actionReplaceOne(){
 
 function endTurn(){
   // 每回合结束：检查 token 上限已在拿/保留时处理，这里再兜底
-  clampTokenLimit(currentPlayer());
+  if (clampTokenLimit(currentPlayer())){
+    renderAll();
+    return;
+  }
 
   checkEndTrigger();
 
@@ -1559,6 +1655,7 @@ function groupCardsByReward(cards){
 }
 
 function showModal(modal){
+  if (ui.tokenReturn && modal !== el.tokenReturnModal) return;
   document.querySelectorAll(".modal").forEach(m => m.classList.add("hidden"));
   if (!modal) return;
   el.modalOverlay.classList.remove("hidden");
@@ -1566,7 +1663,9 @@ function showModal(modal){
   modal.classList.remove("hidden");
 }
 
-function closeModals(){
+function closeModals({ force = false } = {}){
+  if (ui.tokenReturn && !force) return;
+  if (force) ui.tokenReturn = null;
   document.querySelectorAll(".modal").forEach(m => m.classList.add("hidden"));
   el.modalOverlay.classList.add("hidden");
   document.body.classList.remove("modal-open");
@@ -1611,8 +1710,12 @@ if (el.btnConfirmPlayerCount) el.btnConfirmPlayerCount.addEventListener("click",
 if (el.btnCancelPlayerCount) el.btnCancelPlayerCount.addEventListener("click", closeModals);
 if (el.btnCloseHandModal) el.btnCloseHandModal.addEventListener("click", closeModals);
 if (el.btnCloseCardDetailModal) el.btnCloseCardDetailModal.addEventListener("click", closeModals);
+if (el.btnConfirmTokenReturn) el.btnConfirmTokenReturn.addEventListener("click", confirmTokenReturn);
 
-if (el.modalOverlay) el.modalOverlay.addEventListener("click", closeModals);
+if (el.modalOverlay) el.modalOverlay.addEventListener("click", () => {
+  if (ui.tokenReturn) return;
+  closeModals();
+});
 
 window.addEventListener("resize", () => {
   if (!el.handModal || el.handModal.classList.contains("hidden")) return;
