@@ -626,6 +626,7 @@ function actionReserve(){
   if (!found) return toast("选择的卡不在展示区", { type: "error" });
 
   const { level, idx, card } = found;
+  if (level >= 4) return toast("稀有或传说卡牌不能被保留", { type: "error" });
   const startEl = document.querySelector(`.market-card[data-card-id="${card.id}"]`);
   const targetZone = findPlayerZone(state.currentPlayerIndex, ".reserve-zone .zone-items");
 
@@ -1180,7 +1181,10 @@ function renderHandZone(cards, playerIndex){
   });
 
   zone.appendChild(items);
-  zone.addEventListener("click", () => openHandModal(playerIndex));
+  zone.addEventListener("click", (ev) => {
+    if (ev.target.closest(".mini-card")) return;
+    openHandModal(playerIndex);
+  });
   return zone;
 }
 
