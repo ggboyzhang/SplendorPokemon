@@ -697,22 +697,35 @@ function actionTake3Different(){
   const colors = [...ui.selectedTokenColors];
   if (colors.length === 0) return toast("先选择精灵球标记", { type: "error" });
   if (colors.includes(Ball.master_ball)) return toast("大师球只能在保留卡牌时获得", { type: "error" });
-  if (colors.length > 3) return toast("最多选 3 种不同颜色的精灵球标记", { type: "error" });
+
+  const availableColors = BALL_KEYS
+    .map((_, idx) => idx)
+    .filter((idx) => idx !== Ball.master_ball && state.tokenPool[idx] > 0);
+
+  if (availableColors.length === 0) return toast("供应区没有可拿的精灵球标记", { type: "error" });
+
+  if (availableColors.length >= 3){
+    if (colors.length !== 3) return toast("场上至少 3 种颜色时，必须拿 3 个不同颜色的精灵球标记", { type: "error" });
+  } else {
+    if (colors.length !== availableColors.length){
+      return toast(`场上仅剩 ${availableColors.length} 种颜色，必须全部拿取`, { type: "error" });
+    }
+  }
+
+  if (colors.some((c) => state.tokenPool[c] <= 0)){
+    return toast("所选颜色的精灵球标记供应不足", { type: "error" });
+  }
 
   // 实际可拿：供应区有的才拿
-  let took = 0;
   for (const c of colors){
-    if (state.tokenPool[c] <= 0) continue;
     state.tokenPool[c] -= 1;
     p.tokens[c] += 1;
-    took += 1;
   }
-  if (took === 0) return toast("这些颜色的精灵球标记供应区都没了", { type: "error" });
 
   clampTokenLimit(p);
   clearSelections();
   renderAll();
-  toast(`拿取 ${took} 个不同颜色精灵球标记`);
+  toast(`拿取 ${colors.length} 个不同颜色精灵球标记`);
 }
 
 function actionTake2Same(){
