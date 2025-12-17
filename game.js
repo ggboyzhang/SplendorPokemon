@@ -59,11 +59,6 @@ const el = {
   handModalBody: $("#handModalBody"),
   btnCloseHandModal: $("#btnCloseHandModal"),
 
-  cardDetailTitle: $("#cardDetailTitle"),
-  cardDetailModal: $("#cardDetailModal"),
-  cardDetailBody: $("#cardDetailBody"),
-  btnCloseCardDetailModal: $("#btnCloseCardDetailModal"),
-
   errorBanner: $("#errorBanner"),
 
   actTake3: $("#actTake3"),
@@ -1205,7 +1200,6 @@ function renderHandZone(cards, playerIndex){
     toggleHandSelection(cardId, playerIndex);
     renderPlayers();
     renderHandModal(playerIndex);
-    openCardDetail(card);
   });
 
   zone.addEventListener("click", (ev) => {
@@ -1238,7 +1232,6 @@ function renderReserveZone(cards, playerIndex){
       ui.selectedReservedCard = same ? null : { playerIndex, cardId: card.id };
       renderPlayers();
       renderMarket();
-      openCardDetail(card);
     });
 
     items.appendChild(mini);
@@ -1292,10 +1285,7 @@ function renderCardStack(card, { selectable = false, playerIndex } = {}){
       toggleHandSelection(card.id, playerIndex);
       renderHandModal(playerIndex);
       renderPlayers();
-      openCardDetail(card);
     });
-  } else {
-    stack.addEventListener("click", () => openCardDetail(card));
   }
 
   const main = renderFullCard(card);
@@ -1405,18 +1395,6 @@ function renderHandModal(playerIndex = ui.handPreviewPlayerIndex){
     hint.textContent = "暂无卡牌";
     el.handModalBody.appendChild(hint);
   }
-}
-
-function openCardDetail(card, { title } = {}){
-  if (!card || !el.cardDetailBody || !el.cardDetailModal) return;
-  el.cardDetailBody.innerHTML = "";
-  if (el.cardDetailTitle){
-    el.cardDetailTitle.textContent = title || card.name || "卡牌详情";
-  }
-  const stack = renderCardStack(card, { selectable: false });
-  stack.classList.add("card-detail-stack");
-  el.cardDetailBody.appendChild(stack);
-  showModal(el.cardDetailModal);
 }
 
 function groupCardsByReward(cards){

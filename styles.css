@@ -475,10 +475,6 @@ body {
     border-radius: 12px;
     overflow: hidden;
 }
-.card-detail-content { width: min(720px, 92vw); }
-.card-detail-body { display: grid; place-items: center; padding: 8px 0 0; }
-.card-detail-stack { cursor: default; }
-
 /* =======================
    模态框
 ======================= */
