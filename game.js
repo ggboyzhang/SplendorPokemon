@@ -726,26 +726,36 @@ function actionEvolve(){
   if (state.perTurn.evolved) return toast("本回合已完成一次进化", { type: "error" });
 
   const p = currentPlayer();
-  const target = ui.selectedHandCard;
-  if (!target || target.playerIndex !== state.currentPlayerIndex){
-    return toast("请选择要进化的自己的卡牌", { type: "error" });
-  }
+  if (!ui.selectedMarketCardId) return toast("先点击展示区选择要用于进化的卡牌", { type: "error" });
+  const found = findMarketCard(ui.selectedMarketCardId);
+  if (!found) return toast("选择的卡不在展示区", { type: "error" });
 
-  const baseCard = p.hand.find(c => c.id === target.cardId);
-  if (!baseCard) return toast("未找到选中的卡牌", { type: "error" });
-  if (!baseCard.evolution) return toast("该卡牌没有可进化的目标", { type: "error" });
+  const { level, idx, card: marketCard } = found;
+  const matchingBases = p.hand.filter(c => c?.evolution?.name === marketCard.name);
+  if (!matchingBases.length) return toast("该展示区卡牌无法进化你的任何手牌", { type: "error" });
 
-  const evoTarget = findCardTemplateByName(baseCard.evolution.name);
-  if (!evoTarget) return toast("未找到可用的进化卡牌模板", { type: "error" });
-  if (!canAffordEvolution(p, baseCard)) return toast("精灵球标记不足，无法进化该卡牌", { type: "error" });
+  const baseCard = matchingBases.find(c => canAffordEvolution(p, c));
+  if (!baseCard) return toast("精灵球标记不足，无法用该卡进行进化", { type: "error" });
 
   payEvolutionCost(p, baseCard);
-  const evolved = replaceWithEvolution(p, baseCard, evoTarget);
+
+  const startEl = document.querySelector(`.market-card[data-card-id="${marketCard.id}"]`);
+  const handZone = findPlayerZone(state.currentPlayerIndex, ".hand-zone .zone-items");
+
+  state.market.slotsByLevel[level][idx] = null;
+  if (startEl) startEl.style.visibility = "hidden";
+
+  const evolved = replaceWithEvolution(p, baseCard, marketCard);
 
   state.perTurn.evolved = true;
+  ui.selectedMarketCardId = null;
   ui.selectedHandCard = evolved ? { playerIndex: state.currentPlayerIndex, cardId: evolved.id } : null;
-  renderAll();
-  toast(`${baseCard.name} 已进化为 ${evoTarget.name}`);
+
+  animateCardMove(startEl, handZone).then(() => {
+    state.market.slotsByLevel[level][idx] = drawFromDeck(level);
+    renderAll();
+    toast(`${baseCard.name} 已进化为 ${marketCard.name}`);
+  });
 }
 
 function actionReplaceOne(){
@@ -1188,6 +1198,7 @@ function renderHandZone(cards, playerIndex){
   items.addEventListener("click", (ev) => {
     const cardEl = ev.target.closest(".mini-card");
     if (!cardEl) return;
+    ev.stopPropagation();
     const cardId = cardEl.dataset.cardId;
     const card = cards.find(c => c.id === cardId);
     if (!card) return;
