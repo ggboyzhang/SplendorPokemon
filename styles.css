@@ -8,7 +8,7 @@
     --line: #1e293b;
     --card-w: 160px;
     --card-h: 250px;
-    --token-d: clamp(36px, 4.8vw, 52px);
+    --token-d: clamp(72px, 9.6vw, 104px);
 }
 
 * { box-sizing: border-box; }
@@ -74,9 +74,9 @@ body {
     padding: 10px;
     height: calc(100vh - 70px);
     display: grid;
-    grid-template-columns: 1.45fr 1fr;
+    grid-template-columns: 1.5fr 1fr;
     grid-template-rows: 1fr;
-    gap: 8px;
+    gap: 12px;
     overflow: hidden;
 }
 
@@ -107,17 +107,14 @@ body {
 }
 
 .board-body {
-    display: grid;
-    grid-template-rows: 1fr auto;
-    grid-template-columns: 1fr;
-    gap: 8px;
-    align-items: stretch;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
     min-height: 0;
     height: 100%;
 }
 
-
-.market-panel, .token-panel {
+.table-surface {
     background: rgba(5, 8, 15, 0.75);
     border: 1px solid rgba(148, 163, 184, 0.25);
     border-radius: 14px;
@@ -125,16 +122,14 @@ body {
     min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
     box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05);
+    height: 100%;
 }
 
-.market-panel { height: 100%; }
-.token-panel { align-self: stretch; }
-
-.market-board { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: start; }
+.market-board { display: grid; grid-template-columns: auto auto; gap: 12px; align-items: start; width: fit-content; align-self: flex-start; }
 .market-main { display: grid; gap: 8px; grid-template-rows: repeat(3, auto); }
-.market-side { display: grid; gap: 8px; grid-template-rows: repeat(2, auto); }
+.market-side { display: grid; gap: 8px; grid-template-rows: repeat(2, auto); align-self: center; }
 
 .market-section { display: grid; grid-template-columns: var(--card-w) auto; align-items: start; gap: 10px; padding: 6px; border-radius: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(148,163,184,0.16); min-height: 0; }
 
@@ -219,12 +214,12 @@ body {
 .deck-indicator .card-back { position: absolute; inset: 0; border-radius: 12px; }
 .deck-indicator.ghost { opacity: 0.35; }
 
+
 .market-vertical {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 10px;
-    padding: 6px;
+    gap: 12px;
+    padding: 8px 12px;
     border-radius: 12px;
     background: rgba(255,255,255,0.02);
     border: 1px solid rgba(148,163,184,0.16);
@@ -233,11 +228,13 @@ body {
 .market-single-slot {
     width: var(--card-w);
     height: var(--card-h);
+    margin-left: 6px;
 }
 
 .market-single-slot > .market-card { margin: 0 auto; }
 
-.token-pool { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.token-actions { display: flex; flex-direction: column; gap: 10px; }
+.token-pool { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
 .token-chip {
     position: relative;
     width: var(--token-d);
@@ -284,6 +281,7 @@ body {
     gap: 10px;
     min-height: 0;
     height: 100%;
+    margin-left: 6px;
 }
 
 .players-grid {

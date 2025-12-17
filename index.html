@@ -33,28 +33,24 @@
             </div>
 
             <div class="board-body">
-                <div class="market-panel">
-                    <div class="panel-title">展示区（全用真实卡牌）</div>
+                <div class="table-surface">
                     <div id="market" class="market-board"></div>
-                </div>
-
-                <div class="token-panel">
-                    <div class="panel-title">公共 token（在卡牌下方）</div>
-                    <div id="tokenPool" class="token-pool"></div>
-                    <div class="action-buttons">
-                        <button id="actTake3" class="btn">拿取 3 种</button>
-                        <button id="actTake2" class="btn">拿取 2 同色</button>
-                        <button id="actReserve" class="btn">保留卡牌</button>
-                        <button id="actBuy" class="btn primary">购买/捕捉</button>
-                        <button id="actEvolve" class="btn">进化</button>
-                        <button id="actEndTurn" class="btn end-turn">结束回合</button>
+                    <div class="token-actions">
+                        <div id="tokenPool" class="token-pool"></div>
+                        <div class="action-buttons">
+                            <button id="actTake3" class="btn">拿取 3 种</button>
+                            <button id="actTake2" class="btn">拿取 2 同色</button>
+                            <button id="actReserve" class="btn">保留卡牌</button>
+                            <button id="actBuy" class="btn primary">购买/捕捉</button>
+                            <button id="actEvolve" class="btn">进化</button>
+                            <button id="actEndTurn" class="btn end-turn">结束回合</button>
+                        </div>
                     </div>
                 </div>
             </div>
         </section>
 
         <section class="players-panel">
-            <div class="panel-title">玩家一览</div>
             <div id="players" class="players-grid"></div>
         </section>
     </main>
