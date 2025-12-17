@@ -211,28 +211,6 @@ function buildDecksFromLibrary(lib){
   };
 }
 
-function levelFromLibKey(key){
-  if (key === "level_1") return 1;
-  if (key === "level_2") return 2;
-  if (key === "level_3") return 3;
-  if (key === "rare") return 4;
-  if (key === "legend") return 5;
-  return 1;
-}
-
-function findCardTemplateByName(name){
-  if (!cardLibraryData || !name) return null;
-  const sections = ["level_1", "level_2", "level_3", "rare", "legend"];
-  for (const key of sections){
-    const list = cardLibraryData[key] || [];
-    const found = list.find(c => c.name === name);
-    if (found){
-      return normalizeCard(found, found.level ?? levelFromLibKey(key));
-    }
-  }
-  return null;
-}
-
 // ========== 5) 新游戏初始化 ==========
 async function newGame(playerCount){
   const lib = await loadCardLibrary();
@@ -633,18 +611,6 @@ function payEvolutionCost(p, card){
     p.tokens[Ball.master_ball] -= spendPurple;
     state.tokenPool[Ball.master_ball] += spendPurple;
   }
-}
-
-function findEvolvableCard(p){
-  for (const card of p.hand){
-    if (!card?.evolution) continue;
-    if (!canAffordEvolution(p, card)) continue;
-    const target = findCardTemplateByName(card.evolution.name);
-    if (target){
-      return { baseCard: card, targetCard: target };
-    }
-  }
-  return null;
 }
 
 function cleanStackData(card){
@@ -1174,32 +1140,6 @@ function applySavePayload(payload){
   renderAll();
 }
 
-function exportSave(){
-  const payload = makeSavePayload();
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type:"application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "pokemon-splendor-save.json";
-  a.click();
-  URL.revokeObjectURL(url);
-  toast("已导出存档 JSON");
-}
-
-function importSaveFile(file){
-  const reader = new FileReader();
-  reader.onload = () => {
-    try{
-      const parsed = JSON.parse(String(reader.result));
-      applySavePayload(parsed);
-      toast("导入存档成功");
-    }catch{
-      toast("导入失败：不是有效的 JSON 存档", { type: "error" });
-    }
-  };
-  reader.readAsText(file);
-}
-
 // ========== 10) 渲染 ==========
 function renderAll(){
   ensurePerTurnDefaults();
@@ -1423,10 +1363,6 @@ function renderDeckIndicator(deckClass, remain){
   back.className = `card-back ${deckClass}`;
   deck.appendChild(back);
   return deck;
-}
-
-function renderBackPlaceholder(deckClass, isGhost){
-  return renderEmptySlot(isGhost);
 }
 
 function renderEmptySlot(isGhost){
@@ -1923,9 +1859,6 @@ function toast(msg, { type = "info" } = {}){
   }
 }
 
-function randInt(a,b){
-  return Math.floor(Math.random()*(b-a+1))+a;
-}
 function shuffle(arr){
   const a = [...arr];
   for (let i=a.length-1;i>0;i--){
