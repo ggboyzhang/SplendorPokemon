@@ -1367,22 +1367,53 @@ function renderHandModal(playerIndex = ui.handPreviewPlayerIndex){
 function applyHandStackingLayout(){
   if (!el.handModalBody) return;
 
+  const handModalContent = el.handModal?.querySelector?.(".hand-modal-content");
+  const handModalStyles = handModalContent ? getComputedStyle(handModalContent) : null;
+
   const cardWidth = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--card-w")) || 160;
   const normalGap = 10;
 
+  const modalMaxWidth = Math.floor(window.innerWidth * 0.8);
+  const contentPadding = handModalStyles
+    ? (parseFloat(handModalStyles.paddingLeft || "0") + parseFloat(handModalStyles.paddingRight || "0"))
+    : 40;
+
   const grids = el.handModalBody.querySelectorAll(".hand-group-grid");
+
+  let widestNormal = 0;
+  grids.forEach(grid => {
+    const stacks = grid.querySelectorAll(".card-stack");
+    if (!stacks.length) return;
+
+    const totalNormal = stacks.length * cardWidth + (stacks.length - 1) * normalGap;
+    widestNormal = Math.max(widestNormal, totalNormal);
+  });
+
+  if (handModalContent){
+    const desired = Math.min(modalMaxWidth, Math.max(360, widestNormal + contentPadding));
+    handModalContent.style.width = `${desired}px`;
+  }
+
   grids.forEach(grid => {
     grid.classList.remove("stacked");
     grid.style.removeProperty("--hand-stack-overlap");
+    grid.style.removeProperty("min-width");
 
     const stacks = grid.querySelectorAll(".card-stack");
     if (stacks.length <= 1) return;
 
-    const available = grid.getBoundingClientRect().width;
-    if (!available) return;
+    const normalWidth = stacks.length * cardWidth + (stacks.length - 1) * normalGap;
+    const modalWidth = handModalContent?.getBoundingClientRect().width || modalMaxWidth;
+    const maxAvailable = Math.max(modalWidth - contentPadding, 0);
+    const available = Math.min(grid.getBoundingClientRect().width || maxAvailable, maxAvailable);
 
-    const totalNormal = stacks.length * cardWidth + (stacks.length - 1) * normalGap;
-    if (totalNormal <= available) return;
+    const fitsScreen = normalWidth <= maxAvailable;
+    if (fitsScreen){
+      grid.style.minWidth = `${normalWidth}px`;
+      return;
+    }
+
+    if (!available) return;
 
     const spacing = Math.max((available - cardWidth) / (stacks.length - 1), 0);
     const overlap = spacing - cardWidth;
