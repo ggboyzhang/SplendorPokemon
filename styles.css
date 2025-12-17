@@ -444,7 +444,15 @@ body {
 
 .hand-group { display: flex; flex-direction: column; gap: 10px; }
 .hand-group-title { font-weight: 700; color: #e5e7eb; letter-spacing: 0.4px; }
-.hand-group-grid { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+.hand-group-grid {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 10px;
+    align-items: flex-start;
+    overflow-x: auto;
+    padding-bottom: 4px;
+}
 
 .card-stack {
     position: relative;
