@@ -442,17 +442,42 @@ body {
 .full-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .full-card.card-missing { background: rgba(255,255,255,0.04); }
 
-.hand-group { display: flex; flex-direction: column; gap: 10px; }
+.hand-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    min-width: 0;
+}
 .hand-group-title { font-weight: 700; color: #e5e7eb; letter-spacing: 0.4px; }
+
 .hand-group-grid {
+    --hand-group-gap: 10px;
+    --hand-stack-overlap: 0px;
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
-    gap: 10px;
+    gap: var(--hand-group-gap);
     align-items: flex-start;
-    overflow-x: auto;
-    padding-bottom: 4px;
+    padding-bottom: 8px;
+    width: 100%;
+    max-width: 100%;
+    overflow: visible;
 }
+
+.hand-group-grid.stacked {
+    gap: 0;
+}
+
+.hand-group-grid.stacked .card-stack {
+    margin-left: var(--hand-stack-overlap);
+}
+
+.hand-group-grid.stacked .card-stack:first-child {
+    margin-left: 0;
+}
+
+.hand-group-grid .card-stack { flex: 0 0 var(--card-w); }
 
 .card-stack {
     position: relative;
@@ -469,7 +494,12 @@ body {
     box-shadow: 0 6px 14px rgba(0,0,0,0.32);
 }
 
-.hand-modal-content { width: min(1024px, 92vw); max-height: 86vh; overflow: hidden; }
+.hand-modal-content {
+    width: min(80vw, max-content);
+    max-width: 80vw;
+    min-width: 360px;
+    overflow: visible;
+}
 .hand-modal-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; }
 .hand-modal-body { display: grid; gap: 14px; align-items: start; }
 .hand-modal-body.two-column { grid-template-columns: repeat(2, minmax(0, 1fr)); }
