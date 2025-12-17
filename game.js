@@ -87,12 +87,11 @@ const el = {
 
 // ========== 3) 游戏状态（存档核心） ==========
 /**
- * 你要求存档内容：
+ * 存档包含：
  * - 每个玩家：hand(手牌区/桌面阵列)、reserved(保留区)、tokens(token区)、name、isStarter
  */
 let state = makeEmptyState();
 
-// UI 交互选择
 let ui = {
   selectedTokenColors: new Set(), // for take actions
   selectedMarketCardId: null,     // for reserve/buy
@@ -211,28 +210,6 @@ function buildDecksFromLibrary(lib){
   };
 }
 
-function levelFromLibKey(key){
-  if (key === "level_1") return 1;
-  if (key === "level_2") return 2;
-  if (key === "level_3") return 3;
-  if (key === "rare") return 4;
-  if (key === "legend") return 5;
-  return 1;
-}
-
-function findCardTemplateByName(name){
-  if (!cardLibraryData || !name) return null;
-  const sections = ["level_1", "level_2", "level_3", "rare", "legend"];
-  for (const key of sections){
-    const list = cardLibraryData[key] || [];
-    const found = list.find(c => c.name === name);
-    if (found){
-      return normalizeCard(found, found.level ?? levelFromLibKey(key));
-    }
-  }
-  return null;
-}
-
 // ========== 5) 新游戏初始化 ==========
 async function newGame(playerCount){
   const lib = await loadCardLibrary();
@@ -240,17 +217,14 @@ async function newGame(playerCount){
   state = makeEmptyState();
   ui.errorMessage = "";
 
-  // token pool 按人数调整（按你规则）
   state.tokenPool = makeTokenPoolByPlayerCount(playerCount);
 
-  // 玩家命名：玩家 + 机器人1~3
   state.players = [];
   for (let i=0;i<playerCount;i++){
     state.players.push({
       id: `P${i}`,
       name: i === 0 ? "玩家" : `机器人${i}`,
       isStarter: false,
-      // 你要求：手牌区(这里当作“已捕捉展示区”)、保留区、token区
       hand: [],      // bought/captured cards on table
       reserved: [],  // reserved cards
       tokens: [0,0,0,0,0,0], // counts by color
@@ -270,14 +244,11 @@ async function newGame(playerCount){
 
 // token 数量按人数
 function makeTokenPoolByPlayerCount(n){
-  // 默认 4人：红/粉/蓝/黄/黑 各7，紫5
   let pool = [7,7,7,7,7,5];
   if (n === 3){
-    // 移除紫以外每色各1
     pool = [6,6,6,6,6,5];
   }
   if (n === 2){
-    // 移除紫以外每色各3
     pool = [4,4,4,4,4,5];
   }
   return pool;
@@ -633,18 +604,6 @@ function payEvolutionCost(p, card){
     p.tokens[Ball.master_ball] -= spendPurple;
     state.tokenPool[Ball.master_ball] += spendPurple;
   }
-}
-
-function findEvolvableCard(p){
-  for (const card of p.hand){
-    if (!card?.evolution) continue;
-    if (!canAffordEvolution(p, card)) continue;
-    const target = findCardTemplateByName(card.evolution.name);
-    if (target){
-      return { baseCard: card, targetCard: target };
-    }
-  }
-  return null;
 }
 
 function cleanStackData(card){
@@ -1091,8 +1050,6 @@ function loadFromLocal(){
 }
 
 function makeSavePayload(){
-  // 你要求存：每个玩家的 hand/reserved/tokens/name/isStarter
-  // 我额外把公共区/回合也存了，让你“完整复现”
   return {
     version: state.version,
     createdAt: state.createdAt,
@@ -1172,32 +1129,6 @@ function applySavePayload(payload){
 
   clearSelections();
   renderAll();
-}
-
-function exportSave(){
-  const payload = makeSavePayload();
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type:"application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "pokemon-splendor-save.json";
-  a.click();
-  URL.revokeObjectURL(url);
-  toast("已导出存档 JSON");
-}
-
-function importSaveFile(file){
-  const reader = new FileReader();
-  reader.onload = () => {
-    try{
-      const parsed = JSON.parse(String(reader.result));
-      applySavePayload(parsed);
-      toast("导入存档成功");
-    }catch{
-      toast("导入失败：不是有效的 JSON 存档", { type: "error" });
-    }
-  };
-  reader.readAsText(file);
 }
 
 // ========== 10) 渲染 ==========
@@ -1423,10 +1354,6 @@ function renderDeckIndicator(deckClass, remain){
   back.className = `card-back ${deckClass}`;
   deck.appendChild(back);
   return deck;
-}
-
-function renderBackPlaceholder(deckClass, isGhost){
-  return renderEmptySlot(isGhost);
 }
 
 function renderEmptySlot(isGhost){
@@ -1923,9 +1850,6 @@ function toast(msg, { type = "info" } = {}){
   }
 }
 
-function randInt(a,b){
-  return Math.floor(Math.random()*(b-a+1))+a;
-}
 function shuffle(arr){
   const a = [...arr];
   for (let i=a.length-1;i>0;i--){
