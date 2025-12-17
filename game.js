@@ -1384,8 +1384,8 @@ function applyHandStackingLayout(){
     const totalNormal = stacks.length * cardWidth + (stacks.length - 1) * normalGap;
     if (totalNormal <= available) return;
 
-    const step = Math.max(0, (available - cardWidth) / (stacks.length - 1));
-    const overlap = Math.max(step - cardWidth, -cardWidth + 12);
+    const spacing = Math.max((available - cardWidth) / (stacks.length - 1), 0);
+    const overlap = spacing - cardWidth;
 
     grid.classList.add("stacked");
     grid.style.setProperty("--hand-stack-overlap", `${overlap}px`);

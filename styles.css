@@ -442,7 +442,13 @@ body {
 .full-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .full-card.card-missing { background: rgba(255,255,255,0.04); }
 
-.hand-group { display: flex; flex-direction: column; gap: 10px; }
+.hand-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    min-width: 0;
+}
 .hand-group-title { font-weight: 700; color: #e5e7eb; letter-spacing: 0.4px; }
 
 .hand-group-grid {
@@ -454,6 +460,8 @@ body {
     gap: var(--hand-group-gap);
     align-items: flex-start;
     padding-bottom: 8px;
+    width: 100%;
+    max-width: 100%;
     overflow: visible;
 }
 
