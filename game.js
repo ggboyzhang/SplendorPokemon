@@ -877,7 +877,7 @@ function renderHandZone(cards, playerIndex){
   const items = document.createElement("div");
   items.className = "zone-items hand-items";
 
-  const displayCards = cards.slice(0, 5);
+  const displayCards = cards.slice(0, 10);
   const offset = 16;
 
   displayCards.forEach((card, idx) => {
@@ -934,10 +934,18 @@ function renderTokenZone(tokens){
   for (let c=0;c<BALL_NAMES.length;c++){
     const t = document.createElement("div");
     t.className = "token-mini";
-    t.innerHTML = `
-      <div class="t">${BALL_NAMES[c]}</div>
-      <div class="s">× ${tokens[c]}</div>
-    `;
+
+    const img = document.createElement("img");
+    img.src = BALL_IMAGES[c];
+    img.alt = BALL_NAMES[c];
+    img.loading = "lazy";
+    t.appendChild(img);
+
+    const count = document.createElement("div");
+    count.className = "count-badge";
+    count.textContent = `×${tokens[c]}`;
+    t.appendChild(count);
+
     items.appendChild(t);
   }
   zone.appendChild(items);
@@ -989,12 +997,11 @@ function renderHandModal(playerIndex = ui.handPreviewPlayerIndex){
 
   const groups = groupCardsByReward(player.hand);
   const order = [...BALL_NAMES.map((_, i) => i), -1];
-  let hasContent = false;
+  const sections = [];
 
   for (const color of order){
     const list = groups[color] || [];
     if (!list.length) continue;
-    hasContent = true;
 
     const section = document.createElement("div");
     section.className = "hand-group";
@@ -1011,10 +1018,35 @@ function renderHandModal(playerIndex = ui.handPreviewPlayerIndex){
     });
 
     section.appendChild(grid);
-    el.handModalBody.appendChild(section);
+    sections.push({ color, section });
   }
 
-  if (!hasContent){
+  const coloredSections = sections.filter(s => s.color >= 0);
+  const colorKinds = coloredSections.length;
+  const needsTwoColumns = colorKinds === 4 || colorKinds === 5;
+
+  el.handModalBody.classList.toggle("two-column", needsTwoColumns);
+
+  if (needsTwoColumns){
+    const leftCol = document.createElement("div");
+    leftCol.className = "hand-modal-column";
+    const rightCol = document.createElement("div");
+    rightCol.className = "hand-modal-column";
+
+    coloredSections.forEach((entry, idx) => {
+      const target = idx < 3 ? leftCol : rightCol;
+      target.appendChild(entry.section);
+    });
+
+    sections.filter(s => s.color < 0).forEach(entry => rightCol.appendChild(entry.section));
+
+    el.handModalBody.appendChild(leftCol);
+    el.handModalBody.appendChild(rightCol);
+  }else if (sections.length){
+    sections.forEach(entry => el.handModalBody.appendChild(entry.section));
+  }
+
+  if (!sections.length){
     const hint = document.createElement("div");
     hint.className = "empty-hint";
     hint.textContent = "暂无卡牌";
