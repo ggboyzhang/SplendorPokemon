@@ -451,8 +451,6 @@ body {
     width: var(--card-w);
     height: calc(var(--card-h) + 24px);
 }
-.card-stack.selectable { cursor: pointer; }
-.card-stack.selected { box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.75); border-radius: 14px; }
 .card-stack .full-card { position: absolute; top: 0; left: 0; z-index: 5; }
 .card-stack .stacked-card {
     position: absolute;

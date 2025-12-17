@@ -82,7 +82,6 @@ let ui = {
   selectedMarketCardId: null,     // for reserve/buy
   selectedReservedCard: null,     // {playerIndex, cardId}
   handPreviewPlayerIndex: null,
-  selectedHandCard: null,         // {playerIndex, cardId}
   errorMessage: "",
 };
 
@@ -744,7 +743,6 @@ function actionEvolve(){
 
   state.perTurn.evolved = true;
   ui.selectedMarketCardId = null;
-  ui.selectedHandCard = evolved ? { playerIndex: state.currentPlayerIndex, cardId: evolved.id } : null;
 
   animateCardMove(startEl, handZone).then(() => {
     state.market.slotsByLevel[level][idx] = drawFromDeck(level);
@@ -1182,8 +1180,7 @@ function renderHandZone(cards, playerIndex){
   const offset = 16;
 
   displayCards.forEach((card, idx) => {
-    const selected = isHandCardSelected(card.id, playerIndex);
-    const mini = renderMiniCard(card, selected);
+    const mini = renderMiniCard(card, false);
     mini.style.left = `${idx * offset}px`;
     mini.style.zIndex = String(1 + idx);
     items.appendChild(mini);
@@ -1193,12 +1190,6 @@ function renderHandZone(cards, playerIndex){
   items.addEventListener("click", (ev) => {
     const cardEl = ev.target.closest(".mini-card");
     if (!cardEl) return;
-    ev.stopPropagation();
-    const cardId = cardEl.dataset.cardId;
-    const card = cards.find(c => c.id === cardId);
-    if (!card) return;
-    toggleHandSelection(cardId, playerIndex);
-    renderPlayers();
     openHandModal(playerIndex);
   });
 
@@ -1273,20 +1264,9 @@ function renderFullCard(card){
   return renderCardVisual(card, "full-card");
 }
 
-function renderCardStack(card, { selectable = false, playerIndex } = {}){
+function renderCardStack(card){
   const stack = document.createElement("div");
-  const isSelected = selectable && isHandCardSelected(card.id, playerIndex);
-  stack.className = "card-stack" + (isSelected ? " selected" : "");
-
-  if (selectable){
-    stack.dataset.cardId = card.id;
-    stack.classList.add("selectable");
-    stack.addEventListener("click", () => {
-      toggleHandSelection(card.id, playerIndex);
-      renderHandModal(playerIndex);
-      renderPlayers();
-    });
-  }
+  stack.className = "card-stack";
 
   const main = renderFullCard(card);
   stack.appendChild(main);
@@ -1306,18 +1286,6 @@ function renderCardStack(card, { selectable = false, playerIndex } = {}){
 
 function getStackedCards(card){
   return card?.underCards || card?.stackedCards || card?.consumedCards || [];
-}
-
-function isHandCardSelected(cardId, playerIndex){
-  return ui.selectedHandCard &&
-    ui.selectedHandCard.cardId === cardId &&
-    ui.selectedHandCard.playerIndex === playerIndex;
-}
-
-function toggleHandSelection(cardId, playerIndex){
-  if (!cardId) return;
-  const same = isHandCardSelected(cardId, playerIndex);
-  ui.selectedHandCard = same ? null : { cardId, playerIndex };
 }
 
 function openHandModal(playerIndex){
@@ -1354,10 +1322,7 @@ function renderHandModal(playerIndex = ui.handPreviewPlayerIndex){
     const grid = document.createElement("div");
     grid.className = "hand-group-grid";
     list.forEach(card => {
-      grid.appendChild(renderCardStack(card, {
-        selectable: playerIndex === state.currentPlayerIndex,
-        playerIndex,
-      }));
+      grid.appendChild(renderCardStack(card));
     });
 
     section.appendChild(grid);
@@ -1498,7 +1463,6 @@ function clearSelections(){
   ui.selectedTokenColors.clear();
   ui.selectedMarketCardId = null;
   ui.selectedReservedCard = null;
-  ui.selectedHandCard = null;
 }
 
 function toast(msg, { type = "info" } = {}){
