@@ -86,10 +86,10 @@ function makeEmptyState(){
     createdAt: new Date().toISOString(),
     // 公共区（不要求存档也可以存，建议存：方便完全复现）
     tokenPool: [7,7,7,7,7,5], // 默认 4人
-    market: { // 展示区（占位卡）
-      slots: [], // card objects
+    market: {
+      slotsByLevel: { 1: [], 2: [], 3: [], 4: [], 5: [] },
     },
-    decks: { // 占位：以后接真实 cards.json 分堆
+    decks: {
       lv1: [],
       lv2: [],
       lv3: [],
@@ -110,36 +110,56 @@ function makeEmptyState(){
   };
 }
 
-// ========== 4) 卡牌数据：占位生成 / 以后替换为真实 90 张 ==========
-function makePlaceholderCard(id, level){
-  // 成本：随机 1~3 个颜色，数量 1~4（只为可试玩）
-  const colors = shuffle([0,1,2,3,4]).slice(0, randInt(1,3));
-  const cost = colors.map(c => ({ ball_color: c, number: randInt(1,4) }));
+// ========== 4) 卡牌数据：真实 cards ==========
+let cardLibraryPromise = null;
+let lastLoadError = null;
+
+function loadCardLibrary(){
+  if (!cardLibraryPromise){
+    const url = new URL("cards.json", window.location.href).toString();
+
+    cardLibraryPromise = fetch(url, { cache: "no-store", headers: { "Accept": "application/json" } })
+      .then(res => {
+        if (!res.ok) throw new Error(`cards.json 加载失败（${res.status}）`);
+        return res.json();
+      })
+      .catch(err => {
+        // 失败后允许重新尝试加载
+        cardLibraryPromise = null;
+        const isFileProtocol = window.location.protocol === "file:";
+        if (isFileProtocol){
+          lastLoadError = "无法在 file:// 下加载 cards.json，请在本地服务器上打开";
+        } else {
+          lastLoadError = err?.message || "Failed to fetch";
+        }
+        throw err;
+      });
+  }
+  return cardLibraryPromise;
+}
+
+function normalizeCard(raw, level){
   return {
-    id,
-    name: `占位宝可梦 #${id}`,
-    src: "",
-    level,
-    point: Math.max(0, level-1) + (Math.random() < 0.2 ? 1 : 0),
-    evolution: { name:"", cost:{ ball_color:-1, number:-1 } },
-    reward: { ball_color:-1, number:-1 },
-    cost
+    ...raw,
+    id: raw.md5 || raw.id || `${level}-${Math.random().toString(16).slice(2)}`,
+    level: raw.level ?? level,
   };
 }
 
-function buildPlaceholderMarket(){
-  const slots = [];
-  for (let i=0;i<4;i++) slots.push(makePlaceholderCard(`L1-${i}-${Date.now()}`, 1));
-  for (let i=0;i<4;i++) slots.push(makePlaceholderCard(`L2-${i}-${Date.now()}`, 2));
-  for (let i=0;i<4;i++) slots.push(makePlaceholderCard(`L3-${i}-${Date.now()}`, 3));
-  // 你规则里有稀有/传说，这里也给 4+4 占位
-  for (let i=0;i<4;i++) slots.push(makePlaceholderCard(`R-${i}-${Date.now()}`, 4));
-  for (let i=0;i<4;i++) slots.push(makePlaceholderCard(`LEG-${i}-${Date.now()}`, 5));
-  return slots;
+function buildDecksFromLibrary(lib){
+  return {
+    lv1: shuffle((lib.level_1 || []).map(c => normalizeCard(c, 1))),
+    lv2: shuffle((lib.level_2 || []).map(c => normalizeCard(c, 2))),
+    lv3: shuffle((lib.level_3 || []).map(c => normalizeCard(c, 3))),
+    rare: shuffle((lib.rare || []).map(c => normalizeCard(c, 4))),
+    legend: shuffle((lib.legend || []).map(c => normalizeCard(c, 5))),
+  };
 }
 
 // ========== 5) 新游戏初始化 ==========
-function newGame(playerCount){
+async function newGame(playerCount){
+  const lib = await loadCardLibrary();
+  lastLoadError = null;
   state = makeEmptyState();
 
   // token pool 按人数调整（按你规则）
@@ -163,8 +183,8 @@ function newGame(playerCount){
   state.turn = 1;
   state.perTurn.evolved = false;
 
-  // 展示区：占位
-  state.market.slots = buildPlaceholderMarket();
+  state.decks = buildDecksFromLibrary(lib);
+  refillMarketFromDecks();
 
   clearSelections();
   renderAll();
@@ -183,6 +203,54 @@ function makeTokenPoolByPlayerCount(n){
     pool = [4,4,4,4,4,5];
   }
   return pool;
+}
+
+function levelKey(level){
+  if (level === 1) return "lv1";
+  if (level === 2) return "lv2";
+  if (level === 3) return "lv3";
+  if (level === 4) return "rare";
+  return "legend";
+}
+
+function drawFromDeck(level){
+  const key = levelKey(level);
+  const deck = state.decks[key];
+  if (!deck || deck.length === 0) return null;
+  return deck.pop();
+}
+
+function ensureMarketSlotsByLevel(level){
+  const sizes = { 1: 4, 2: 4, 3: 4, 4: 1, 5: 1 };
+  const want = sizes[level] || 0;
+  const slots = state.market.slotsByLevel[level] || [];
+  while (slots.length < want){
+    slots.push(null);
+  }
+  state.market.slotsByLevel[level] = slots;
+}
+
+function refillMarketFromDecks(){
+  for (const level of [1,2,3,4,5]){
+    ensureMarketSlotsByLevel(level);
+    const slots = state.market.slotsByLevel[level];
+    for (let i=0;i<slots.length;i++){
+      if (!slots[i]){
+        slots[i] = drawFromDeck(level);
+      }
+    }
+  }
+}
+
+function findMarketCard(cardId){
+  for (const level of [1,2,3,4,5]){
+    const slots = state.market.slotsByLevel[level] || [];
+    const idx = slots.findIndex(c => c && c.id === cardId);
+    if (idx >= 0){
+      return { level, idx, card: slots[idx] };
+    }
+  }
+  return null;
 }
 
 // ========== 6) 规则工具 ==========
@@ -307,14 +375,13 @@ function actionReserve(){
   if (!ui.selectedMarketCardId) return toast("先点击展示区选择要保留的卡");
   if (p.reserved.length >= 3) return toast("保留区最多 3 张");
 
-  const idx = state.market.slots.findIndex(c => c.id === ui.selectedMarketCardId);
-  if (idx < 0) return toast("选择的卡不在展示区");
+  const found = findMarketCard(ui.selectedMarketCardId);
+  if (!found) return toast("选择的卡不在展示区");
 
-  const card = state.market.slots[idx];
+  const { level, idx, card } = found;
   p.reserved.push(card);
 
-  // 补牌（占位：重新生成同等级一张）
-  state.market.slots[idx] = makePlaceholderCard(`${card.level}-${Math.random().toString(16).slice(2)}-${Date.now()}`, card.level);
+  state.market.slotsByLevel[level][idx] = drawFromDeck(level);
 
   // 拿 1 个大师球（紫）
   if (state.tokenPool[Ball.master_ball] > 0){
@@ -354,17 +421,17 @@ function actionBuy(){
 
   // 购买展示区卡
   if (!ui.selectedMarketCardId) return toast("先点击展示区选择要购买的卡");
-  const idx = state.market.slots.findIndex(c => c.id === ui.selectedMarketCardId);
-  if (idx < 0) return toast("选择的卡不在展示区");
+  const found = findMarketCard(ui.selectedMarketCardId);
+  if (!found) return toast("选择的卡不在展示区");
 
-  const card = state.market.slots[idx];
+  const { level, idx, card } = found;
   if (!canAfford(p, card)) return toast("token 不够，无法购买该卡");
 
   payCost(p, card);
   p.hand.push(card);
 
-  // 补牌（占位）
-  state.market.slots[idx] = makePlaceholderCard(`${card.level}-${Math.random().toString(16).slice(2)}-${Date.now()}`, card.level);
+  // 补牌
+  state.market.slotsByLevel[level][idx] = drawFromDeck(level);
 
   clearSelections();
   renderAll();
@@ -372,27 +439,27 @@ function actionBuy(){
   checkEndTrigger();
 }
 
-function actionEvolvePlaceholder(){
+function actionEvolve(){
   // 你有“进化 A/B”和“不能跳级、每回合一次”的规则；
   // 真正实现需要：卡牌里 evolution.name + 进化链数据/映射。
   if (state.perTurn.evolved) return toast("本回合已进化过一次");
   state.perTurn.evolved = true;
   renderAll();
-  toast("进化（占位）已标记：本回合不能再进化");
+  toast("进化已标记：本回合不能再进化");
 }
 
-function actionReplaceOnePlaceholder(){
+function actionReplaceOne(){
   // 规则：弃掉展示区 1 张并补 1 张（作为回合完整行动）
   if (!ui.selectedMarketCardId) return toast("先点击展示区选择要替换的卡");
-  const idx = state.market.slots.findIndex(c => c.id === ui.selectedMarketCardId);
-  if (idx < 0) return toast("选择的卡不在展示区");
+  const found = findMarketCard(ui.selectedMarketCardId);
+  if (!found) return toast("选择的卡不在展示区");
 
-  const old = state.market.slots[idx];
-  state.market.slots[idx] = makePlaceholderCard(`${old.level}-${Math.random().toString(16).slice(2)}-${Date.now()}`, old.level);
+  const { level, idx } = found;
+  state.market.slotsByLevel[level][idx] = drawFromDeck(level);
 
   clearSelections();
   renderAll();
-  toast("已替换展示区 1 张卡（占位）");
+  toast("已替换展示区 1 张卡");
 }
 
 function endTurn(){
@@ -466,6 +533,7 @@ function makeSavePayload(){
 
     tokenPool: state.tokenPool,
     market: state.market,
+    decks: state.decks,
 
     players: state.players.map(p => ({
       name: p.name,
@@ -491,7 +559,27 @@ function applySavePayload(payload){
   state.perTurn = payload.perTurn ?? { evolved:false };
 
   state.tokenPool = payload.tokenPool ?? [7,7,7,7,7,5];
-  state.market = payload.market ?? { slots: [] };
+
+  state.market = { slotsByLevel: { 1: [], 2: [], 3: [], 4: [], 5: [] } };
+  const savedMarket = payload.market && payload.market.slotsByLevel;
+  if (savedMarket){
+    for (const level of [1,2,3,4,5]){
+      state.market.slotsByLevel[level] = Array.isArray(savedMarket[level]) ? savedMarket[level] : [];
+    }
+  }
+
+  state.decks = {
+    lv1: payload.decks?.lv1 || [],
+    lv2: payload.decks?.lv2 || [],
+    lv3: payload.decks?.lv3 || [],
+    rare: payload.decks?.rare || [],
+    legend: payload.decks?.legend || [],
+  };
+
+  for (const level of [1,2,3,4,5]){
+    ensureMarketSlotsByLevel(level);
+  }
+  refillMarketFromDecks();
 
   // 玩家（必须包含你要的字段）
   state.players = payload.players.map((p, i) => ({
@@ -548,9 +636,16 @@ function renderAll(){
 
 function renderBadges(){
   if (!el.turnBadge || !el.currentPlayerBadge || !el.trophyBadge) return;
+  if (lastLoadError){
+    el.currentPlayerBadge.textContent = `资源加载失败：${lastLoadError}`;
+    el.turnBadge.textContent = "回合：-";
+    el.trophyBadge.textContent = "当前玩家奖杯：0";
+    return;
+  }
+  const p = state.players[state.currentPlayerIndex];
   el.turnBadge.textContent = `回合：${state.turn}`;
-  el.currentPlayerBadge.textContent = `当前玩家：${currentPlayer().name}`;
-  el.trophyBadge.textContent = `当前玩家奖杯：${totalTrophiesOfPlayer(currentPlayer())}`;
+  el.currentPlayerBadge.textContent = p ? `当前玩家：${p.name}` : "当前玩家";
+  el.trophyBadge.textContent = p ? `当前玩家奖杯：${totalTrophiesOfPlayer(p)}` : "当前玩家奖杯：0";
 }
 
 function renderTokenPool(){
@@ -591,46 +686,123 @@ function renderTokenPool(){
 function renderMarket(){
   if (!el.market) return;
   el.market.innerHTML = "";
-  for (const card of state.market.slots){
-    const div = document.createElement("div");
-    div.className = "card" + (ui.selectedMarketCardId === card.id ? " selected" : "");
-    div.dataset.cardId = card.id;
 
-    const name = document.createElement("div");
-    name.className = "name";
-    name.textContent = card.name || "(未命名)";
-    div.appendChild(name);
+  const main = document.createElement("div");
+  main.className = "market-main";
+  const side = document.createElement("div");
+  side.className = "market-side";
 
-    const meta = document.createElement("div");
-    meta.className = "meta";
-    meta.innerHTML = `
-      <span>Lv ${card.level}</span>
-      <span>奖杯 ${card.point}</span>
-      <span>ID ${String(card.id).slice(0,10)}…</span>
-    `;
-    div.appendChild(meta);
+  const mainGroups = [
+    { level: 1, deckClass: "level-1-back", slots: 4 },
+    { level: 2, deckClass: "level-2-back", slots: 4 },
+    { level: 3, deckClass: "level-3-back", slots: 4 },
+  ];
 
-    const cost = document.createElement("div");
-    cost.className = "cost";
-    if (Array.isArray(card.cost)){
-      for (const it of card.cost){
-        const pip = document.createElement("span");
-        pip.className = "pip";
-        pip.textContent = `${BALL_NAMES[it.ball_color] ?? "?"} ×${it.number}`;
-        cost.appendChild(pip);
-      }
-    }
-    div.appendChild(cost);
-
-    div.addEventListener("click", () => {
-      ui.selectedReservedCard = null;
-      ui.selectedMarketCardId = (ui.selectedMarketCardId === card.id) ? null : card.id;
-      renderMarket();
-      renderPlayers(); // 让玩家保留区取消高亮
-    });
-
-    el.market.appendChild(div);
+  for (const group of mainGroups){
+    main.appendChild(renderMarketRow(group));
   }
+
+  const sideGroups = [
+    { level: 4, deckClass: "rare-back", slots: 1 },
+    { level: 5, deckClass: "legend-back", slots: 1 },
+  ];
+
+  for (const group of sideGroups){
+    side.appendChild(renderVerticalMarket(group));
+  }
+
+  el.market.appendChild(main);
+  el.market.appendChild(side);
+}
+
+function renderMarketRow(group){
+  const section = document.createElement("div");
+  section.className = "market-section";
+
+  const remain = state.decks[levelKey(group.level)]?.length || 0;
+  section.appendChild(renderDeckIndicator(group.deckClass, remain));
+
+  const grid = document.createElement("div");
+  grid.className = "market";
+  grid.style.gridTemplateColumns = `repeat(${group.slots}, var(--card-w))`;
+  grid.style.gridAutoRows = "var(--card-h)";
+
+  const cards = state.market.slotsByLevel[group.level] || [];
+  for (let i=0; i<group.slots; i++){
+    const card = cards[i];
+    grid.appendChild(card ? renderMarketCard(card) : renderEmptySlot(remain === 0));
+  }
+
+  section.appendChild(grid);
+  return section;
+}
+
+function renderVerticalMarket(group){
+  const wrap = document.createElement("div");
+  wrap.className = "market-vertical";
+
+  const remain = state.decks[levelKey(group.level)]?.length || 0;
+  wrap.appendChild(renderDeckIndicator(group.deckClass, remain));
+
+  const slotBox = document.createElement("div");
+  slotBox.className = "market-single-slot";
+
+  const card = (state.market.slotsByLevel[group.level] || [])[0];
+  slotBox.appendChild(card ? renderMarketCard(card) : renderEmptySlot(remain === 0));
+
+  wrap.appendChild(slotBox);
+  return wrap;
+}
+
+function renderDeckIndicator(deckClass, remain){
+  const deck = document.createElement("div");
+  deck.className = `deck-indicator ${deckClass}` + (remain === 0 ? " ghost" : "");
+
+  const back = document.createElement("div");
+  back.className = `card-back ${deckClass}`;
+  deck.appendChild(back);
+  return deck;
+}
+
+function renderBackPlaceholder(deckClass, isGhost){
+  return renderEmptySlot(isGhost);
+}
+
+function renderEmptySlot(isGhost){
+  const placeholder = document.createElement("div");
+  placeholder.className = "market-card empty" + (isGhost ? " ghost" : "");
+
+  const visual = document.createElement("div");
+  visual.className = "market-visual";
+  placeholder.appendChild(visual);
+
+  return placeholder;
+}
+
+function renderMarketCard(card){
+  const div = document.createElement("div");
+  div.className = "market-card" + (ui.selectedMarketCardId === card.id ? " selected" : "");
+  div.dataset.cardId = card.id;
+
+  const visual = document.createElement("div");
+  visual.className = "market-visual";
+  if (card.src){
+    const img = document.createElement("img");
+    img.className = "market-img";
+    img.src = card.src;
+    img.alt = card.name || "卡牌";
+    visual.appendChild(img);
+  }
+  div.appendChild(visual);
+
+  div.addEventListener("click", () => {
+    ui.selectedReservedCard = null;
+    ui.selectedMarketCardId = (ui.selectedMarketCardId === card.id) ? null : card.id;
+    renderMarket();
+    renderPlayers();
+  });
+
+  return div;
 }
 
 function renderPlayers(){
@@ -682,7 +854,7 @@ function renderZone(title, cards, opts){
 
   for (const card of cards){
     const m = document.createElement("div");
-    m.className = "mini";
+    m.className = "mini-card";
     const selected = ui.selectedReservedCard &&
       ui.selectedReservedCard.cardId === card.id &&
       ui.selectedReservedCard.playerIndex === opts.playerIndex;
@@ -690,7 +862,10 @@ function renderZone(title, cards, opts){
 
     m.innerHTML = `
       <div class="t">${escapeHtml(card.name || "(未命名)")}</div>
-      <div class="s">Lv ${card.level} · 奖杯 ${card.point}</div>
+      <div class="s">
+        <span class="level-chip">Lv ${card.level}</span>
+        <span class="point-chip">⭐ ${card.point}</span>
+      </div>
     `;
 
     if (opts.clickable){
@@ -729,7 +904,7 @@ function renderTokenZone(tokens){
 
   for (let c=0;c<BALL_NAMES.length;c++){
     const t = document.createElement("div");
-    t.className = "mini";
+    t.className = "token-mini";
     t.innerHTML = `
       <div class="t">${BALL_NAMES[c]}</div>
       <div class="s">× ${tokens[c]}</div>
@@ -778,9 +953,9 @@ if (el.btnNewWithoutSave) el.btnNewWithoutSave.addEventListener("click", () => {
 
 if (el.btnCancelNew) el.btnCancelNew.addEventListener("click", closeModals);
 
-if (el.btnConfirmPlayerCount) el.btnConfirmPlayerCount.addEventListener("click", () => {
+if (el.btnConfirmPlayerCount) el.btnConfirmPlayerCount.addEventListener("click", async () => {
   const n = Number(el.playerCount.value);
-  newGame(Number.isFinite(n) ? n : 4);
+  await newGame(Number.isFinite(n) ? n : 4);
   toast("已开始新游戏");
   closeModals();
 });
@@ -789,28 +964,40 @@ if (el.btnCancelPlayerCount) el.btnCancelPlayerCount.addEventListener("click", c
 
 if (el.modalOverlay) el.modalOverlay.addEventListener("click", closeModals);
 
-if (el.btnReplaceOne) el.btnReplaceOne.addEventListener("click", actionReplaceOnePlaceholder);
+if (el.btnReplaceOne) el.btnReplaceOne.addEventListener("click", actionReplaceOne);
 
 if (el.actTake3) el.actTake3.addEventListener("click", actionTake3Different);
 if (el.actTake2) el.actTake2.addEventListener("click", actionTake2Same);
 if (el.actReserve) el.actReserve.addEventListener("click", actionReserve);
 if (el.actBuy) el.actBuy.addEventListener("click", actionBuy);
-if (el.actEvolve) el.actEvolve.addEventListener("click", actionEvolvePlaceholder);
+if (el.actEvolve) el.actEvolve.addEventListener("click", actionEvolve);
 if (el.actEndTurn) el.actEndTurn.addEventListener("click", endTurn);
 
 // ========== 12) 启动 ==========
-(function boot(){
-  // 自动尝试读档；没有就开新局
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (raw){
-    try{
-      applySavePayload(JSON.parse(raw));
-      toast("已自动读取本地存档");
-      return;
-    }catch{}
+(async function boot(){
+  try{
+    await loadCardLibrary();
+    // 自动尝试读档；没有就开新局
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw){
+      try{
+        applySavePayload(JSON.parse(raw));
+        toast("已自动读取本地存档");
+        return;
+      }catch{}
+    }
+    await newGame(Number(el.playerCount.value));
+    toast("已创建默认新游戏");
+  }catch(err){
+    console.error("加载游戏失败", err);
+    lastLoadError = err?.message || lastLoadError || "Failed to fetch";
+    if (el.currentPlayerBadge){
+      const hint = lastLoadError ? `资源加载失败：${lastLoadError}` : "资源加载失败：Failed to fetch";
+      el.currentPlayerBadge.textContent = hint;
+    }
+    // 即使卡牌未加载成功，也尝试渲染现有 UI，方便用户看到错误提示
+    renderAll();
   }
-  newGame(Number(el.playerCount.value));
-  toast("已创建默认新游戏");
 })();
 
 // ========== 13) 工具 ==========
