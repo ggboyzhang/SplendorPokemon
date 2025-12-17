@@ -447,12 +447,17 @@ body {
 .hand-group-grid {
     display: flex;
     flex-direction: row;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     gap: 10px;
     align-items: flex-start;
-    overflow-x: auto;
     padding-bottom: 4px;
 }
+
+.hand-group-grid .card-stack { flex: 0 0 var(--card-w); }
+
+.hand-group-grid.is-stacked { gap: var(--hand-stack-offset); }
+.hand-group-grid.is-stacked .card-stack { margin-left: calc(var(--hand-stack-offset) * -1); }
+.hand-group-grid.is-stacked .card-stack:first-child { margin-left: 0; }
 
 .card-stack {
     position: relative;
@@ -469,7 +474,7 @@ body {
     box-shadow: 0 6px 14px rgba(0,0,0,0.32);
 }
 
-.hand-modal-content { width: min(1024px, 92vw); max-height: 86vh; overflow: hidden; }
+.hand-modal-content { width: min(1024px, 80vw); max-width: 80vw; max-height: 86vh; overflow: hidden; }
 .hand-modal-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; }
 .hand-modal-body { display: grid; gap: 14px; align-items: start; }
 .hand-modal-body.two-column { grid-template-columns: repeat(2, minmax(0, 1fr)); }

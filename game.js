@@ -1360,6 +1360,15 @@ function renderHandModal(playerIndex = ui.handPreviewPlayerIndex){
     hint.textContent = "暂无卡牌";
     el.handModalBody.appendChild(hint);
   }
+
+  requestAnimationFrame(applyHandGridStacking);
+}
+
+function applyHandGridStacking(){
+  document.querySelectorAll(".hand-group-grid").forEach(grid => {
+    const requiresStack = grid.scrollWidth > grid.clientWidth + 2;
+    grid.classList.toggle("is-stacked", requiresStack);
+  });
 }
 
 function groupCardsByReward(cards){
