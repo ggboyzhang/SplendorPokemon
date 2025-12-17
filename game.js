@@ -29,6 +29,13 @@ const BALL_IMAGES = [
 ];
 const STORAGE_KEY = "pokemon_splendor_save_v1";
 
+const PRIMARY_ACTION_LABELS = {
+  take3: "拿取异色标记",
+  take2: "拿取同色标记",
+  reserve: "保留卡牌",
+  buy: "捕捉",
+};
+
 // ========== 2) DOM ==========
 const $ = (sel) => document.querySelector(sel);
 
@@ -121,11 +128,38 @@ function makeEmptyState(){
     // 规则约束（每回合一次进化）
     perTurn: {
       evolved: false,
+      primaryAction: null,
     },
     endTriggered: false,
     endTriggerTurn: null,
     victoryResolved: false,
   };
+}
+
+function ensurePerTurnDefaults(){
+  if (!state.perTurn) state.perTurn = { evolved: false, primaryAction: null };
+  if (state.perTurn.evolved === undefined) state.perTurn.evolved = false;
+  if (state.perTurn.primaryAction === undefined) state.perTurn.primaryAction = null;
+}
+
+function getPrimaryActionLabel(key){
+  return PRIMARY_ACTION_LABELS[key] || "主要行动";
+}
+
+function hasTakenPrimaryAction(){
+  ensurePerTurnDefaults();
+  return !!state.perTurn.primaryAction;
+}
+
+function blockIfPrimaryActionLocked(){
+  if (!hasTakenPrimaryAction()) return false;
+  toast(`本回合已执行【${getPrimaryActionLabel(state.perTurn.primaryAction)}】，请结束回合后再进行其他主要行动`, { type: "error" });
+  return true;
+}
+
+function markPrimaryAction(actionKey){
+  ensurePerTurnDefaults();
+  state.perTurn.primaryAction = actionKey;
 }
 
 // ========== 4) 卡牌数据：真实 cards ==========
@@ -225,7 +259,7 @@ async function newGame(playerCount){
   state.players[0].isStarter = true;
   state.currentPlayerIndex = 0;
   state.turn = 1;
-  state.perTurn.evolved = false;
+  state.perTurn = { evolved: false, primaryAction: null };
 
   state.decks = buildDecksFromLibrary(lib);
   refillMarketFromDecks();
@@ -693,6 +727,7 @@ function animateCardMove(startEl, targetEl, duration = 800){
 
 // ========== 7) 行动实现 ==========
 function actionTake3Different(){
+  if (blockIfPrimaryActionLocked()) return;
   const p = currentPlayer();
   const colors = [...ui.selectedTokenColors];
   if (colors.length === 0) return toast("先选择精灵球标记", { type: "error" });
@@ -722,6 +757,7 @@ function actionTake3Different(){
     p.tokens[c] += 1;
   }
 
+  markPrimaryAction("take3");
   clampTokenLimit(p);
   clearSelections();
   renderAll();
@@ -729,6 +765,7 @@ function actionTake3Different(){
 }
 
 function actionTake2Same(){
+  if (blockIfPrimaryActionLocked()) return;
   const p = currentPlayer();
   const colors = [...ui.selectedTokenColors];
   if (colors.length === 0) return toast("先选择精灵球标记", { type: "error" });
@@ -740,6 +777,7 @@ function actionTake2Same(){
   state.tokenPool[c] -= 2;
   p.tokens[c] += 2;
 
+  markPrimaryAction("take2");
   clampTokenLimit(p);
   clearSelections();
   renderAll();
@@ -747,11 +785,13 @@ function actionTake2Same(){
 }
 
 function actionReserve(){
+  if (blockIfPrimaryActionLocked()) return;
   const p = currentPlayer();
   if (p.reserved.length >= 3){
     if (state.tokenPool[Ball.master_ball] <= 0) return toast("保留区已满且没有可拿的大师球精灵球标记", { type: "error" });
     state.tokenPool[Ball.master_ball] -= 1;
     p.tokens[Ball.master_ball] += 1;
+    markPrimaryAction("reserve");
     clampTokenLimit(p);
     clearSelections();
     renderAll();
@@ -779,6 +819,7 @@ function actionReserve(){
     gotMaster = true;
   }
 
+  markPrimaryAction("reserve");
   clampTokenLimit(p);
   clearSelections();
   if (startEl) startEl.style.visibility = "hidden";
@@ -791,6 +832,7 @@ function actionReserve(){
 }
 
 function actionBuy(){
+  if (blockIfPrimaryActionLocked()) return;
   const p = currentPlayer();
 
   // 优先：买保留牌
@@ -810,6 +852,8 @@ function actionBuy(){
     payCost(p, card);
     p.reserved.splice(rIdx, 1);
     p.hand.push(card);
+
+    markPrimaryAction("buy");
 
     clearSelections();
     if (startEl) startEl.style.visibility = "hidden";
@@ -835,6 +879,8 @@ function actionBuy(){
 
   payCost(p, card);
   p.hand.push(card);
+
+  markPrimaryAction("buy");
 
   // 补牌在动画结束后进行
   state.market.slotsByLevel[level][idx] = null;
@@ -900,6 +946,12 @@ function actionReplaceOne(){
 }
 
 function endTurn(){
+  ensurePerTurnDefaults();
+  if (!state.victoryResolved && !state.perTurn.primaryAction){
+    toast("请先完成本回合的主要行动再结束回合", { type: "error" });
+    return;
+  }
+
   // 每回合结束：检查 token 上限已在拿/保留时处理，这里再兜底
   if (clampTokenLimit(currentPlayer())){
     renderAll();
@@ -937,7 +989,7 @@ function endTurn(){
   if (state.currentPlayerIndex === 0){
     state.turn += 1;
   }
-  state.perTurn.evolved = false;
+  state.perTurn = { evolved: false, primaryAction: null };
   ui.errorMessage = "";
 
   clearSelections();
@@ -1077,7 +1129,8 @@ function applySavePayload(payload){
   state.endTriggered = !!payload.endTriggered;
   state.endTriggerTurn = payload.endTriggerTurn ?? null;
   state.victoryResolved = !!payload.victoryResolved;
-  state.perTurn = payload.perTurn ?? { evolved:false };
+  state.perTurn = payload.perTurn ?? { evolved:false, primaryAction: null };
+  ensurePerTurnDefaults();
 
   state.tokenPool = payload.tokenPool ?? [7,7,7,7,7,5];
 
@@ -1149,10 +1202,12 @@ function importSaveFile(file){
 
 // ========== 10) 渲染 ==========
 function renderAll(){
+  ensurePerTurnDefaults();
   renderTokenPool();
   renderMarket();
   renderPlayers();
   renderErrorBanner();
+  renderActionButtons();
   if (el.handModal && !el.handModal.classList.contains("hidden")){
     renderHandModal(ui.handPreviewPlayerIndex);
   }
@@ -1169,6 +1224,89 @@ function renderErrorBanner(){
     el.errorBanner.textContent = "";
     el.errorBanner.classList.add("hidden");
   }
+}
+
+function marketCardsByLevels(levels = [1,2,3,4,5]){
+  const cards = [];
+  const slots = state.market?.slotsByLevel || {};
+  levels.forEach(level => {
+    (slots[level] || []).forEach(card => {
+      if (card) cards.push({ level, card });
+    });
+  });
+  return cards;
+}
+
+function hasReservableMarketCard(){
+  return marketCardsByLevels([1,2,3]).length > 0;
+}
+
+function canReserveAnyCard(p){
+  if (!p) return false;
+  if (p.reserved.length >= 3){
+    return state.tokenPool[Ball.master_ball] > 0;
+  }
+  return hasReservableMarketCard();
+}
+
+function canBuyAnyCard(p){
+  if (!p) return false;
+  if (p.reserved.some(card => card && canAfford(p, card))) return true;
+  return marketCardsByLevels().some(({ card }) => card && canAfford(p, card));
+}
+
+function canEvolveAnyCard(p){
+  if (!p) return false;
+  for (const { card: marketCard } of marketCardsByLevels()){
+    if (!marketCard) continue;
+    const bases = p.hand.filter(c => c?.evolution?.name === marketCard.name);
+    if (!bases.length) continue;
+    if (bases.some(c => canAffordEvolution(p, c))) return true;
+  }
+  return false;
+}
+
+function getActionAvailability(){
+  const player = currentPlayer();
+  const hasDifferent = BALL_KEYS.some((_, idx) => idx !== Ball.master_ball && state.tokenPool[idx] > 0);
+  const hasSame = BALL_KEYS.some((_, idx) => idx !== Ball.master_ball && canTakeTwoSame(idx));
+  const reserveAvailable = canReserveAnyCard(player);
+  const buyAvailable = canBuyAnyCard(player);
+  const evolveAvailable = canEvolveAnyCard(player);
+
+  return {
+    take3: hasDifferent,
+    take2: hasSame,
+    reserve: reserveAvailable,
+    buy: buyAvailable,
+    evolve: evolveAvailable,
+    endTurn: !!state.perTurn.primaryAction || state.victoryResolved,
+  };
+}
+
+function renderActionButtons(){
+  if (!el.actTake3) return;
+  const availability = getActionAvailability();
+  const taken = state.perTurn.primaryAction;
+  const hasLockedPrimary = hasTakenPrimaryAction();
+  const primarySet = new Set(["take3", "take2", "reserve", "buy"]);
+
+  const mapping = [
+    { key: "take3", el: el.actTake3 },
+    { key: "take2", el: el.actTake2 },
+    { key: "reserve", el: el.actReserve },
+    { key: "buy", el: el.actBuy },
+    { key: "evolve", el: el.actEvolve },
+    { key: "endTurn", el: el.actEndTurn },
+  ];
+
+  mapping.forEach(({ key, el }) => {
+    if (!el) return;
+    const lockedByPrimary = hasLockedPrimary && primarySet.has(key) && taken !== key;
+    const disabled = !availability[key] || lockedByPrimary;
+    el.disabled = disabled;
+    el.classList.toggle("completed", taken === key);
+  });
 }
 
 function renderTokenPool(){

@@ -65,6 +65,11 @@ body {
     color: var(--text);
     cursor: pointer;
 }
+.btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    filter: grayscale(0.3);
+}
 .btn.danger { border-color: #7f1d1d; color: #fecdd3; }
 .btn.primary { border-color: #1e3a8a; color: #bfdbfe; }
 .btn:active { transform: translateY(1px); }
@@ -96,12 +101,11 @@ body {
     background: linear-gradient(120deg, rgba(255,255,255,0.04), rgba(0,0,0,0.24));
     box-shadow: 0 12px 26px rgba(0,0,0,0.35);
     display: grid;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: 1fr auto;
     gap: 10px;
     min-height: 0;
 }
-
-.board-header { display: flex; align-items: center; min-height: 44px; }
+.board-footer { min-height: 44px; display: flex; align-items: center; }
 .error-banner {
     padding: 10px 12px;
     border-radius: 12px;
@@ -110,6 +114,7 @@ body {
     color: #fecdd3;
     font-weight: 600;
     font-size: 14px;
+    width: 100%;
 }
 
 .board-body {
@@ -244,7 +249,7 @@ body {
 
 .market-single-slot > .market-card { margin: 0 auto; }
 
-.token-actions { display: flex; flex-direction: column; gap: 10px; }
+.token-actions { display: flex; flex-direction: column; gap: 12px; }
 .token-pool { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
 .token-chip {
     position: relative;
@@ -274,8 +279,44 @@ body {
     box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
 
-.action-buttons { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 6px; }
-.end-turn { border-color: #1d4ed8; color: #bfdbfe; background: rgba(37, 99, 235, 0.15); }
+.action-toolbar {
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 14px;
+    background: linear-gradient(120deg, rgba(59,130,246,0.08), rgba(0,0,0,0.35));
+    padding: 12px;
+    display: grid;
+    gap: 10px;
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.04);
+}
+
+.action-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+}
+
+.action-btn {
+    width: 100%;
+    padding: 14px 16px;
+    font-weight: 700;
+    border-radius: 12px;
+    border-width: 1.5px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.25);
+    transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
+}
+
+.action-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(0,0,0,0.35); }
+.action-btn:not(:disabled):active { transform: translateY(0); box-shadow: none; }
+.action-btn.completed { box-shadow: 0 0 0 2px rgba(52,211,153,0.65), 0 10px 24px rgba(0,0,0,0.45); }
+
+.action-take-diff { background: linear-gradient(135deg, rgba(14, 165, 233, 0.24), rgba(14, 165, 233, 0.08)); border-color: rgba(14,165,233,0.5); color: #bae6fd; }
+.action-take-same { background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(109, 40, 217, 0.16)); border-color: rgba(168,85,247,0.6); color: #f3e8ff; }
+.action-reserve { background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(245, 158, 11, 0.1)); border-color: rgba(245,158,11,0.6); color: #fef9c3; }
+.action-buy { background: linear-gradient(135deg, rgba(34, 197, 94, 0.26), rgba(34, 197, 94, 0.12)); border-color: rgba(34,197,94,0.6); color: #d1fae5; }
+.action-evolve { background: linear-gradient(135deg, rgba(99, 102, 241, 0.28), rgba(59, 130, 246, 0.12)); border-color: rgba(99,102,241,0.6); color: #e0e7ff; }
+.end-turn { border-color: #1d4ed8; color: #bfdbfe; background: rgba(37, 99, 235, 0.15); font-weight: 800; }
+
+.action-hint { color: #cbd5e1; font-size: 12px; text-align: right; opacity: 0.8; }
 
 /* =======================
    玩家一览

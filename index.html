@@ -26,25 +26,27 @@
 
     <main class="app">
         <section class="board">
-            <div class="board-header">
-                <div class="error-banner hidden" id="errorBanner"></div>
-            </div>
-
             <div class="board-body">
                 <div class="table-surface">
                     <div id="market" class="market-board"></div>
                     <div class="token-actions">
                         <div id="tokenPool" class="token-pool"></div>
-                        <div class="action-buttons">
-                            <button id="actTake3" class="btn">拿取异色标记</button>
-                            <button id="actTake2" class="btn">拿取同色标记</button>
-                            <button id="actReserve" class="btn">保留卡牌</button>
-                            <button id="actBuy" class="btn primary">捕捉</button>
-                            <button id="actEvolve" class="btn">进化</button>
-                            <button id="actEndTurn" class="btn end-turn">结束回合</button>
+                        <div class="action-toolbar">
+                            <div class="action-grid">
+                                <button id="actTake3" class="btn action-btn action-take-diff">拿取异色标记</button>
+                                <button id="actTake2" class="btn action-btn action-take-same">拿取同色标记</button>
+                                <button id="actReserve" class="btn action-btn action-reserve">保留卡牌</button>
+                                <button id="actBuy" class="btn action-btn action-buy">捕捉</button>
+                                <button id="actEvolve" class="btn action-btn action-evolve">进化</button>
+                                <button id="actEndTurn" class="btn action-btn end-turn">结束回合</button>
+                            </div>
+                            <div class="action-hint">每回合必须选择一次主要行动后才能结束回合</div>
                         </div>
                     </div>
                 </div>
+            </div>
+            <div class="board-footer">
+                <div class="error-banner hidden" id="errorBanner"></div>
             </div>
         </section>
 
