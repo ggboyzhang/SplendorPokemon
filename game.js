@@ -114,6 +114,7 @@ function makeEmptyState(){
     },
     endTriggered: false,
     endTriggerTurn: null,
+    victoryResolved: false,
   };
 }
 
@@ -308,8 +309,31 @@ function rewardBonusesOfPlayer(p){
   return bonus;
 }
 
+function flattenHandCards(p){
+  const collected = [];
+  function collect(card){
+    if (!card) return;
+    collected.push(card);
+    getStackedCards(card).forEach(collect);
+  }
+  p.hand.forEach(collect);
+  return collected;
+}
+
 function totalTrophiesOfPlayer(p){
-  return p.hand.reduce((sum, c)=>sum + (c.point > 0 ? c.point : 0), 0);
+  return flattenHandCards(p).reduce((sum, c)=>sum + (c.point > 0 ? c.point : 0), 0);
+}
+
+function totalScoreOfPlayer(p){
+  return flattenHandCards(p).reduce((sum, c)=>sum + (Number(c.point) || 0), 0);
+}
+
+function penaltyHandCount(p){
+  return flattenHandCards(p).filter(c => (Number(c.point) || 0) < 0).length;
+}
+
+function trophyCardCount(p){
+  return flattenHandCards(p).filter(c => (Number(c.point) || 0) > 0).length;
 }
 
 function canTakeTwoSame(color){
@@ -769,6 +793,21 @@ function endTurn(){
   // 每回合结束：检查 token 上限已在拿/保留时处理，这里再兜底
   clampTokenLimit(currentPlayer());
 
+  checkEndTrigger();
+
+  const isLastPlayerOfRound = state.currentPlayerIndex === state.players.length - 1;
+  const shouldResolve = shouldResolveVictory(isLastPlayerOfRound);
+
+  if (shouldResolve){
+    resolveVictory();
+  }
+
+  if (state.victoryResolved){
+    clearSelections();
+    renderAll();
+    return;
+  }
+
   // 终局触发：当有人≥18，触发后需要“回合数平衡”
   // 这里做一个简化：记录触发回合，之后所有玩家各再走到同回合数就结算提示
   if (state.endTriggered){
@@ -804,6 +843,44 @@ function checkEndTrigger(){
   }
 }
 
+function hasAnyPlayerReachedVictoryThreshold(){
+  return state.players.some(p => totalTrophiesOfPlayer(p) >= 18);
+}
+
+function shouldResolveVictory(isLastPlayerOfRound){
+  if (state.victoryResolved) return false;
+
+  if (!state.endTriggered && hasAnyPlayerReachedVictoryThreshold()){
+    state.endTriggered = true;
+    state.endTriggerTurn = state.turn;
+  }
+
+  if (!state.endTriggered) return false;
+
+  if (state.turn > state.endTriggerTurn) return true;
+  if (state.turn === state.endTriggerTurn && isLastPlayerOfRound) return true;
+  return false;
+}
+
+function resolveVictory(){
+  const ranking = state.players.map((p, idx) => ({
+    player: p,
+    index: idx,
+    score: totalScoreOfPlayer(p),
+    penalty: penaltyHandCount(p),
+    trophyCards: trophyCardCount(p),
+  })).sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    if (b.penalty !== a.penalty) return b.penalty - a.penalty;
+    if (b.trophyCards !== a.trophyCards) return b.trophyCards - a.trophyCards;
+    return a.index - b.index;
+  });
+
+  const winner = ranking[0];
+  state.victoryResolved = true;
+  toast(`终局结算：${winner.player.name} 获胜！（分数：${winner.score}）`);
+}
+
 // ========== 9) 存档 / 读档 ==========
 function saveToLocal(){
   const payload = makeSavePayload();
@@ -833,6 +910,7 @@ function makeSavePayload(){
     currentPlayerIndex: state.currentPlayerIndex,
     endTriggered: state.endTriggered,
     endTriggerTurn: state.endTriggerTurn,
+    victoryResolved: state.victoryResolved,
     perTurn: state.perTurn,
 
     tokenPool: state.tokenPool,
@@ -860,6 +938,7 @@ function applySavePayload(payload){
   state.currentPlayerIndex = payload.currentPlayerIndex ?? 0;
   state.endTriggered = !!payload.endTriggered;
   state.endTriggerTurn = payload.endTriggerTurn ?? null;
+  state.victoryResolved = !!payload.victoryResolved;
   state.perTurn = payload.perTurn ?? { evolved:false };
 
   state.tokenPool = payload.tokenPool ?? [7,7,7,7,7,5];
