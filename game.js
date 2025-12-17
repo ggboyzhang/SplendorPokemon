@@ -59,9 +59,7 @@ const el = {
   handModalBody: $("#handModalBody"),
   btnCloseHandModal: $("#btnCloseHandModal"),
 
-  turnBadge: $("#turnBadge"),
-  currentPlayerBadge: $("#currentPlayerBadge"),
-  trophyBadge: $("#trophyBadge"),
+  errorBanner: $("#errorBanner"),
 
   actTake3: $("#actTake3"),
   actTake2: $("#actTake2"),
@@ -84,7 +82,10 @@ let ui = {
   selectedMarketCardId: null,     // for reserve/buy
   selectedReservedCard: null,     // {playerIndex, cardId}
   handPreviewPlayerIndex: null,
+  errorMessage: "",
 };
+
+let cardLibraryData = null;
 
 function makeEmptyState(){
   return {
@@ -141,7 +142,10 @@ function loadCardLibrary(){
         throw err;
       });
   }
-  return cardLibraryPromise;
+  return cardLibraryPromise.then(lib => {
+    cardLibraryData = lib;
+    return lib;
+  });
 }
 
 function normalizeCard(raw, level){
@@ -162,11 +166,34 @@ function buildDecksFromLibrary(lib){
   };
 }
 
+function levelFromLibKey(key){
+  if (key === "level_1") return 1;
+  if (key === "level_2") return 2;
+  if (key === "level_3") return 3;
+  if (key === "rare") return 4;
+  if (key === "legend") return 5;
+  return 1;
+}
+
+function findCardTemplateByName(name){
+  if (!cardLibraryData || !name) return null;
+  const sections = ["level_1", "level_2", "level_3", "rare", "legend"];
+  for (const key of sections){
+    const list = cardLibraryData[key] || [];
+    const found = list.find(c => c.name === name);
+    if (found){
+      return normalizeCard(found, found.level ?? levelFromLibKey(key));
+    }
+  }
+  return null;
+}
+
 // ========== 5) 新游戏初始化 ==========
 async function newGame(playerCount){
   const lib = await loadCardLibrary();
   lastLoadError = null;
   state = makeEmptyState();
+  ui.errorMessage = "";
 
   // token pool 按人数调整（按你规则）
   state.tokenPool = makeTokenPoolByPlayerCount(playerCount);
@@ -337,12 +364,77 @@ function payCost(p, card){
   }
 }
 
+function canAffordEvolution(p, card){
+  const evoCost = card?.evolution?.cost;
+  if (!evoCost || evoCost.ball_color === undefined || evoCost.number === undefined) return false;
+  const color = evoCost.ball_color;
+  const need = evoCost.number;
+  if (color < 0 || color >= p.tokens.length) return false;
+  const availableColor = p.tokens[color];
+  if (color === Ball.master_ball){
+    return availableColor >= need;
+  }
+  const availablePurple = p.tokens[Ball.master_ball];
+  return availableColor + availablePurple >= need;
+}
+
+function payEvolutionCost(p, card){
+  const evoCost = card?.evolution?.cost;
+  if (!evoCost) return;
+  const color = evoCost.ball_color;
+  let remaining = evoCost.number;
+  if (color < 0 || color >= p.tokens.length) return;
+
+  const spendColor = Math.min(p.tokens[color], remaining);
+  p.tokens[color] -= spendColor;
+  state.tokenPool[color] += spendColor;
+  remaining -= spendColor;
+
+  if (remaining > 0){
+    const spendPurple = Math.min(p.tokens[Ball.master_ball], remaining);
+    p.tokens[Ball.master_ball] -= spendPurple;
+    state.tokenPool[Ball.master_ball] += spendPurple;
+  }
+}
+
+function findEvolvableCard(p){
+  for (const card of p.hand){
+    if (!card?.evolution) continue;
+    if (!canAffordEvolution(p, card)) continue;
+    const target = findCardTemplateByName(card.evolution.name);
+    if (target){
+      return { baseCard: card, targetCard: target };
+    }
+  }
+  return null;
+}
+
+function cleanStackData(card){
+  if (!card) return card;
+  const clone = { ...card };
+  delete clone.stackedCards;
+  delete clone.underCards;
+  delete clone.consumedCards;
+  return clone;
+}
+
+function replaceWithEvolution(player, baseCard, evolvedTemplate){
+  const idx = player.hand.findIndex(c => c.id === baseCard.id);
+  if (idx < 0) return;
+
+  const existingStack = getStackedCards(baseCard);
+  const stack = [...existingStack.map(cleanStackData), cleanStackData(baseCard)];
+  const evolved = { ...evolvedTemplate, stackedCards: stack };
+
+  player.hand.splice(idx, 1, evolved);
+}
+
 // ========== 7) 行动实现 ==========
 function actionTake3Different(){
   const p = currentPlayer();
   const colors = [...ui.selectedTokenColors];
-  if (colors.length === 0) return toast("先点击公共 token 选择颜色");
-  if (colors.length > 3) return toast("最多选 3 种不同颜色");
+  if (colors.length === 0) return toast("先点击公共 token 选择颜色", { type: "error" });
+  if (colors.length > 3) return toast("最多选 3 种不同颜色", { type: "error" });
 
   // 实际可拿：供应区有的才拿
   let took = 0;
@@ -352,7 +444,7 @@ function actionTake3Different(){
     p.tokens[c] += 1;
     took += 1;
   }
-  if (took === 0) return toast("这些颜色供应区都没了");
+  if (took === 0) return toast("这些颜色供应区都没了", { type: "error" });
 
   clampTokenLimit(p);
   clearSelections();
@@ -363,9 +455,9 @@ function actionTake3Different(){
 function actionTake2Same(){
   const p = currentPlayer();
   const colors = [...ui.selectedTokenColors];
-  if (colors.length !== 1) return toast("行动2 只能选择 1 种颜色");
+  if (colors.length !== 1) return toast("行动2 只能选择 1 种颜色", { type: "error" });
   const c = colors[0];
-  if (!canTakeTwoSame(c)) return toast("该颜色供应区不足 4 个，不能拿 2 个同色");
+  if (!canTakeTwoSame(c)) return toast("该颜色供应区不足 4 个，不能拿 2 个同色", { type: "error" });
 
   state.tokenPool[c] -= 2;
   p.tokens[c] += 2;
@@ -378,11 +470,11 @@ function actionTake2Same(){
 
 function actionReserve(){
   const p = currentPlayer();
-  if (!ui.selectedMarketCardId) return toast("先点击展示区选择要保留的卡");
-  if (p.reserved.length >= 3) return toast("保留区最多 3 张");
+  if (!ui.selectedMarketCardId) return toast("先点击展示区选择要保留的卡", { type: "error" });
+  if (p.reserved.length >= 3) return toast("保留区最多 3 张", { type: "error" });
 
   const found = findMarketCard(ui.selectedMarketCardId);
-  if (!found) return toast("选择的卡不在展示区");
+  if (!found) return toast("选择的卡不在展示区", { type: "error" });
 
   const { level, idx, card } = found;
   p.reserved.push(card);
@@ -407,12 +499,12 @@ function actionBuy(){
   // 优先：买保留牌
   if (ui.selectedReservedCard){
     const { playerIndex, cardId } = ui.selectedReservedCard;
-    if (playerIndex !== state.currentPlayerIndex) return toast("只能购买自己保留区的卡");
+    if (playerIndex !== state.currentPlayerIndex) return toast("只能购买自己保留区的卡", { type: "error" });
     const rIdx = p.reserved.findIndex(c => c.id === cardId);
-    if (rIdx < 0) return toast("该卡不在你的保留区");
+    if (rIdx < 0) return toast("该卡不在你的保留区", { type: "error" });
 
     const card = p.reserved[rIdx];
-    if (!canAfford(p, card)) return toast("token 不够，无法购买该卡");
+    if (!canAfford(p, card)) return toast("token 不够，无法购买该卡", { type: "error" });
 
     payCost(p, card);
     p.reserved.splice(rIdx, 1);
@@ -426,12 +518,12 @@ function actionBuy(){
   }
 
   // 购买展示区卡
-  if (!ui.selectedMarketCardId) return toast("先点击展示区选择要购买的卡");
+  if (!ui.selectedMarketCardId) return toast("先点击展示区选择要购买的卡", { type: "error" });
   const found = findMarketCard(ui.selectedMarketCardId);
-  if (!found) return toast("选择的卡不在展示区");
+  if (!found) return toast("选择的卡不在展示区", { type: "error" });
 
   const { level, idx, card } = found;
-  if (!canAfford(p, card)) return toast("token 不够，无法购买该卡");
+  if (!canAfford(p, card)) return toast("token 不够，无法购买该卡", { type: "error" });
 
   payCost(p, card);
   p.hand.push(card);
@@ -446,19 +538,25 @@ function actionBuy(){
 }
 
 function actionEvolve(){
-  // 你有“进化 A/B”和“不能跳级、每回合一次”的规则；
-  // 真正实现需要：卡牌里 evolution.name + 进化链数据/映射。
-  if (state.perTurn.evolved) return toast("本回合已进化过一次");
+  if (state.perTurn.evolved) return toast("本回合已进化过一次", { type: "error" });
+
+  const p = currentPlayer();
+  const evo = findEvolvableCard(p);
+  if (!evo) return toast("没有满足条件的进化目标", { type: "error" });
+
+  payEvolutionCost(p, evo.baseCard);
+  replaceWithEvolution(p, evo.baseCard, evo.targetCard);
+
   state.perTurn.evolved = true;
   renderAll();
-  toast("进化已标记：本回合不能再进化");
+  toast(`${evo.baseCard.name} 已进化为 ${evo.targetCard.name}`);
 }
 
 function actionReplaceOne(){
   // 规则：弃掉展示区 1 张并补 1 张（作为回合完整行动）
-  if (!ui.selectedMarketCardId) return toast("先点击展示区选择要替换的卡");
+  if (!ui.selectedMarketCardId) return toast("先点击展示区选择要替换的卡", { type: "error" });
   const found = findMarketCard(ui.selectedMarketCardId);
-  if (!found) return toast("选择的卡不在展示区");
+  if (!found) return toast("选择的卡不在展示区", { type: "error" });
 
   const { level, idx } = found;
   state.market.slotsByLevel[level][idx] = drawFromDeck(level);
@@ -489,6 +587,7 @@ function endTurn(){
     state.turn += 1;
   }
   state.perTurn.evolved = false;
+  ui.errorMessage = "";
 
   clearSelections();
   renderAll();
@@ -515,13 +614,13 @@ function saveToLocal(){
 
 function loadFromLocal(){
   const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return toast("没有找到本地存档");
+  if (!raw) return toast("没有找到本地存档", { type: "error" });
   try{
     const parsed = JSON.parse(raw);
     applySavePayload(parsed);
     toast("已从本地读档");
   }catch{
-    toast("读档失败：存档内容损坏");
+    toast("读档失败：存档内容损坏", { type: "error" });
   }
 }
 
@@ -626,7 +725,7 @@ function importSaveFile(file){
       applySavePayload(parsed);
       toast("导入存档成功");
     }catch{
-      toast("导入失败：不是有效的 JSON 存档");
+      toast("导入失败：不是有效的 JSON 存档", { type: "error" });
     }
   };
   reader.readAsText(file);
@@ -637,24 +736,23 @@ function renderAll(){
   renderTokenPool();
   renderMarket();
   renderPlayers();
-  renderBadges();
+  renderErrorBanner();
   if (el.handModal && !el.handModal.classList.contains("hidden")){
     renderHandModal(ui.handPreviewPlayerIndex);
   }
 }
 
-function renderBadges(){
-  if (!el.turnBadge || !el.currentPlayerBadge || !el.trophyBadge) return;
-  if (lastLoadError){
-    el.currentPlayerBadge.textContent = `资源加载失败：${lastLoadError}`;
-    el.turnBadge.textContent = "回合：-";
-    el.trophyBadge.textContent = "当前玩家奖杯：0";
-    return;
+function renderErrorBanner(){
+  if (!el.errorBanner) return;
+  const message = ui.errorMessage || (lastLoadError ? `资源加载失败：${lastLoadError}` : "");
+
+  if (message){
+    el.errorBanner.textContent = message;
+    el.errorBanner.classList.remove("hidden");
+  } else {
+    el.errorBanner.textContent = "";
+    el.errorBanner.classList.add("hidden");
   }
-  const p = state.players[state.currentPlayerIndex];
-  el.turnBadge.textContent = `回合：${state.turn}`;
-  el.currentPlayerBadge.textContent = p ? `当前玩家：${p.name}` : "当前玩家";
-  el.trophyBadge.textContent = p ? `当前玩家奖杯：${totalTrophiesOfPlayer(p)}` : "当前玩家奖杯：0";
 }
 
 function renderTokenPool(){
@@ -1142,10 +1240,8 @@ if (el.actEndTurn) el.actEndTurn.addEventListener("click", endTurn);
   }catch(err){
     console.error("加载游戏失败", err);
     lastLoadError = err?.message || lastLoadError || "Failed to fetch";
-    if (el.currentPlayerBadge){
-      const hint = lastLoadError ? `资源加载失败：${lastLoadError}` : "资源加载失败：Failed to fetch";
-      el.currentPlayerBadge.textContent = hint;
-    }
+    const hint = lastLoadError ? `资源加载失败：${lastLoadError}` : "资源加载失败：Failed to fetch";
+    ui.errorMessage = hint;
     // 即使卡牌未加载成功，也尝试渲染现有 UI，方便用户看到错误提示
     renderAll();
   }
@@ -1158,18 +1254,13 @@ function clearSelections(){
   ui.selectedReservedCard = null;
 }
 
-function toast(msg){
-  // 简易 toast：用 badge 闪一下
+function toast(msg, { type = "info" } = {}){
   console.log("[toast]", msg);
-  el.currentPlayerBadge.textContent = msg;
-
-  el.currentPlayerBadge.style.borderColor = "rgba(34,197,94,0.45)";
-  el.currentPlayerBadge.style.background = "rgba(34,197,94,0.12)";
-  setTimeout(() => {
-    el.currentPlayerBadge.style.borderColor = "";
-    el.currentPlayerBadge.style.background = "";
-    renderBadges();
-  }, 900);
+  if (type === "error"){
+    ui.errorMessage = msg;
+    renderErrorBanner();
+    return;
+  }
 }
 
 function randInt(a,b){

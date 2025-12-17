@@ -101,13 +101,13 @@ body {
     min-height: 0;
 }
 
-.board-header { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-.badge {
-    padding: 8px 12px;
+.board-header { display: flex; align-items: center; min-height: 44px; }
+.error-banner {
+    padding: 10px 12px;
     border-radius: 12px;
-    border: 1px solid rgba(148, 163, 184, 0.35);
-    background: rgba(255, 255, 255, 0.03);
-    color: #f8fafc;
+    border: 1px solid rgba(248, 113, 113, 0.6);
+    background: rgba(248, 113, 113, 0.12);
+    color: #fecdd3;
     font-weight: 600;
     font-size: 14px;
 }
@@ -444,7 +444,7 @@ body {
 
 .hand-group { display: flex; flex-direction: column; gap: 10px; }
 .hand-group-title { font-weight: 700; color: #e5e7eb; letter-spacing: 0.4px; }
-.hand-group-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(var(--card-w), 1fr)); gap: 10px; }
+.hand-group-grid { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
 
 .card-stack {
     position: relative;
