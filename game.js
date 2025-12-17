@@ -1369,6 +1369,7 @@ function applyHandStackingLayout(){
 
   const handModalContent = el.handModal?.querySelector?.(".hand-modal-content");
   const handModalStyles = handModalContent ? getComputedStyle(handModalContent) : null;
+  const handBodyStyles = el.handModalBody ? getComputedStyle(el.handModalBody) : null;
 
   const cardWidth = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--card-w")) || 160;
   const normalGap = 10;
@@ -1377,21 +1378,36 @@ function applyHandStackingLayout(){
   const contentPadding = handModalStyles
     ? (parseFloat(handModalStyles.paddingLeft || "0") + parseFloat(handModalStyles.paddingRight || "0"))
     : 40;
+  const isTwoColumn = el.handModalBody.classList.contains("two-column");
+  const columnGap = isTwoColumn
+    ? (parseFloat(handBodyStyles?.columnGap || handBodyStyles?.gap || "0") || 0)
+    : 0;
+
+  const columns = Array.from(el.handModalBody.querySelectorAll(".hand-modal-column"));
 
   const grids = el.handModalBody.querySelectorAll(".hand-group-grid");
 
   let widestNormal = 0;
+  const columnWidths = columns.length ? Array(columns.length).fill(0) : [0];
   grids.forEach(grid => {
     const stacks = grid.querySelectorAll(".card-stack");
     if (!stacks.length) return;
 
     const totalNormal = stacks.length * cardWidth + (stacks.length - 1) * normalGap;
     widestNormal = Math.max(widestNormal, totalNormal);
+
+    const columnIndex = columns.length ? columns.findIndex(col => col.contains(grid)) : 0;
+    if (columnIndex >= 0){
+      columnWidths[columnIndex] = Math.max(columnWidths[columnIndex], totalNormal);
+    }
   });
 
   if (handModalContent){
-    const desired = Math.min(modalMaxWidth, Math.max(360, widestNormal + contentPadding));
+    const combinedColumnWidth = columnWidths.reduce((sum, w) => sum + w, 0);
+    const desiredContentWidth = combinedColumnWidth + columnGap * Math.max(columnWidths.length - 1, 0);
+    const desired = Math.min(modalMaxWidth, Math.max(360, desiredContentWidth + contentPadding));
     handModalContent.style.width = `${desired}px`;
+    handModalContent.style.maxWidth = `${modalMaxWidth}px`;
   }
 
   grids.forEach(grid => {
@@ -1404,15 +1420,19 @@ function applyHandStackingLayout(){
 
     const normalWidth = stacks.length * cardWidth + (stacks.length - 1) * normalGap;
     const modalWidth = handModalContent?.getBoundingClientRect().width || modalMaxWidth;
-    const maxAvailable = Math.max(modalMaxWidth - contentPadding, 0);
+    const effectiveColumns = columns.length || 1;
+    const widthPerColumn = Math.max(
+      (modalWidth - contentPadding - columnGap * Math.max(effectiveColumns - 1, 0)) / effectiveColumns,
+      0
+    );
 
-    const fitsWithinCap = normalWidth <= maxAvailable;
+    const fitsWithinCap = normalWidth <= widthPerColumn;
     if (fitsWithinCap){
       grid.style.minWidth = `${normalWidth}px`;
       return;
     }
 
-    const spacing = (Math.max(modalWidth - contentPadding, 0) - cardWidth) / (stacks.length - 1);
+    const spacing = (Math.max(widthPerColumn, cardWidth) - cardWidth) / (stacks.length - 1);
     const overlap = spacing - cardWidth;
 
     grid.classList.add("stacked");
