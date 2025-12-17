@@ -447,11 +447,11 @@ body {
 .hand-group-grid {
     display: flex;
     flex-direction: row;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     gap: 10px;
     align-items: flex-start;
     padding-bottom: 8px;
-    overflow-x: auto;
+    overflow: visible;
 }
 
 .hand-group-grid .card-stack { flex: 0 0 var(--card-w); }
@@ -471,7 +471,7 @@ body {
     box-shadow: 0 6px 14px rgba(0,0,0,0.32);
 }
 
-.hand-modal-content { width: 80vw; max-width: 80vw; max-height: 86vh; overflow: auto; }
+.hand-modal-content { width: 80vw; max-width: 80vw; overflow: visible; }
 .hand-modal-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; }
 .hand-modal-body { display: grid; gap: 14px; align-items: start; }
 .hand-modal-body.two-column { grid-template-columns: repeat(2, minmax(0, 1fr)); }
