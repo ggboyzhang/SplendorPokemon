@@ -39,11 +39,13 @@ function totalScoreOfPlayer(p){
 }
 
 function penaltyHandCount(p){
-  return flattenHandCards(p, true).filter(c => (Number(c.point) || 0) < 0).length;
+  const withStack = flattenHandCards(p, true).length;
+  const withoutStack = flattenHandCards(p, false).length;
+  return Math.max(0, withStack - withoutStack);
 }
 
 function trophyCardCount(p){
-  return flattenHandCards(p).filter(c => (Number(c.point) || 0) > 0).length;
+  return flattenHandCards(p, false).length;
 }
 
 function canTakeTwoSame(color){
@@ -326,6 +328,10 @@ function findPlayerZone(playerIndex, zoneSelector){
   return document.querySelector(`.player[data-player-index="${playerIndex}"] ${zoneSelector}`);
 }
 
+function findPlayerTokenSlot(playerIndex, color){
+  return document.querySelector(`.player[data-player-index="${playerIndex}"] .token-zone .token-mini[data-color="${color}"]`);
+}
+
 function animateCardMove(startEl, targetEl, duration = 800){
   if (!startEl || !targetEl) return Promise.resolve();
   const startRect = startEl.getBoundingClientRect();
@@ -389,5 +395,67 @@ function animateCardMove(startEl, targetEl, duration = 800){
       resolve();
     }, { once: true });
   });
+}
+
+function animateTokenMove(startEl, targetEl, duration = 600){
+  if (!startEl || !targetEl) return Promise.resolve();
+  const startRect = startEl.getBoundingClientRect();
+  const targetRect = targetEl.getBoundingClientRect();
+  if (!startRect.width || !targetRect.width) return Promise.resolve();
+
+  const startCenter = {
+    x: startRect.left + startRect.width / 2,
+    y: startRect.top + startRect.height / 2,
+  };
+  const targetCenter = {
+    x: targetRect.left + targetRect.width / 2,
+    y: targetRect.top + targetRect.height / 2,
+  };
+
+  const scaleX = targetRect.width / startRect.width;
+  const scaleY = targetRect.height / startRect.height;
+  const scale = Math.min(scaleX, scaleY);
+
+  const clone = startEl.cloneNode(true);
+  clone.classList.add("flying-card");
+  Object.assign(clone.style, {
+    position: "fixed",
+    left: `${startRect.left}px`,
+    top: `${startRect.top}px`,
+    width: `${startRect.width}px`,
+    height: `${startRect.height}px`,
+    transform: "translate(0,0) scale(1)",
+    transformOrigin: "center center",
+    transition: `transform ${Math.min(duration, 1000)}ms ease, opacity ${Math.min(duration, 1000)}ms ease`,
+    zIndex: 9999,
+    margin: "0",
+    opacity: "1",
+    visibility: "visible",
+  });
+
+  document.body.appendChild(clone);
+
+  const dx = targetCenter.x - startCenter.x;
+  const dy = targetCenter.y - startCenter.y;
+
+  clone.getBoundingClientRect();
+
+  clone.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`;
+  clone.style.opacity = "0";
+
+  return new Promise((resolve) => {
+    const cleanup = () => {
+      clone.remove();
+      resolve();
+    };
+
+    clone.addEventListener("transitionend", cleanup, { once: true });
+    setTimeout(cleanup, duration + 50);
+  });
+}
+
+function animateTokenBatch(movements, duration = 600){
+  if (!Array.isArray(movements) || movements.length === 0) return Promise.resolve();
+  return Promise.all(movements.map(({ start, target }) => animateTokenMove(start, target, duration)));
 }
 

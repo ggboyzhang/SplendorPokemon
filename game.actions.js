@@ -3,6 +3,7 @@ function actionTake3Different(){
   if (blockIfPrimaryActionLocked()) return Promise.resolve(false);
   const p = currentPlayer();
   const colors = [...ui.selectedTokenColors];
+  const playerIndex = state.currentPlayerIndex;
   if (colors.length === 0) return Promise.resolve(toast("先选择精灵球标记", { type: "error" }));
   if (colors.includes(Ball.master_ball)) return Promise.resolve(toast("大师球只能在保留卡牌时获得", { type: "error" }));
 
@@ -24,6 +25,11 @@ function actionTake3Different(){
     return Promise.resolve(toast("所选颜色的精灵球标记供应不足", { type: "error" }));
   }
 
+  const animations = colors.map((c) => ({
+    start: document.querySelector(`.token-chip[data-color="${c}"]`),
+    target: findPlayerTokenSlot(playerIndex, c),
+  }));
+
   // 实际可拿：供应区有的才拿
   for (const c of colors){
     state.tokenPool[c] -= 1;
@@ -33,20 +39,28 @@ function actionTake3Different(){
   markPrimaryAction("take3");
   clampTokenLimit(p);
   clearSelections();
-  renderAll();
-  toast(`拿取 ${colors.length} 个不同颜色精灵球标记`);
-  return Promise.resolve(true);
+  return animateTokenBatch(animations).then(() => {
+    renderAll();
+    toast(`拿取 ${colors.length} 个不同颜色精灵球标记`);
+    return true;
+  });
 }
 
 function actionTake2Same(){
   if (blockIfPrimaryActionLocked()) return Promise.resolve(false);
   const p = currentPlayer();
   const colors = [...ui.selectedTokenColors];
+  const playerIndex = state.currentPlayerIndex;
   if (colors.length === 0) return Promise.resolve(toast("先选择精灵球标记", { type: "error" }));
   if (colors.length !== 1) return Promise.resolve(toast("该行动只能选择 1 种精灵球标记颜色", { type: "error" }));
   const c = colors[0];
   if (c === Ball.master_ball) return Promise.resolve(toast("大师球只能在保留卡牌时获得", { type: "error" }));
   if (!canTakeTwoSame(c)) return Promise.resolve(toast("该颜色精灵球标记供应不足 4 个，不能拿 2 个同色", { type: "error" }));
+
+  const animations = [
+    { start: document.querySelector(`.token-chip[data-color="${c}"]`), target: findPlayerTokenSlot(playerIndex, c) },
+    { start: document.querySelector(`.token-chip[data-color="${c}"]`), target: findPlayerTokenSlot(playerIndex, c) },
+  ];
 
   state.tokenPool[c] -= 2;
   p.tokens[c] += 2;
@@ -54,24 +68,33 @@ function actionTake2Same(){
   markPrimaryAction("take2");
   clampTokenLimit(p);
   clearSelections();
-  renderAll();
-  toast("拿取 2 个同色精灵球标记");
-  return Promise.resolve(true);
+  return animateTokenBatch(animations).then(() => {
+    renderAll();
+    toast("拿取 2 个同色精灵球标记");
+    return true;
+  });
 }
 
 function actionReserve(){
   if (blockIfPrimaryActionLocked()) return Promise.resolve(false);
   const p = currentPlayer();
+  const playerIndex = state.currentPlayerIndex;
   if (p.reserved.length >= 3){
     if (state.tokenPool[Ball.master_ball] <= 0) return Promise.resolve(toast("保留区已满且没有可拿的大师球精灵球标记", { type: "error" }));
+    const animations = [{
+      start: document.querySelector(`.token-chip[data-color="${Ball.master_ball}"]`),
+      target: findPlayerTokenSlot(playerIndex, Ball.master_ball),
+    }];
     state.tokenPool[Ball.master_ball] -= 1;
     p.tokens[Ball.master_ball] += 1;
     markPrimaryAction("reserve");
     clampTokenLimit(p);
     clearSelections();
-    renderAll();
-    toast("保留区已满，本次仅拿取 1 个大师球精灵球标记");
-    return Promise.resolve(true);
+    return animateTokenBatch(animations).then(() => {
+      renderAll();
+      toast("保留区已满，本次仅拿取 1 个大师球精灵球标记");
+      return true;
+    });
   }
 
   if (!ui.selectedMarketCardId) return Promise.resolve(toast("先点击展示区选择要保留的卡", { type: "error" }));
@@ -88,17 +111,25 @@ function actionReserve(){
   p.reserved.push(card);
 
   let gotMaster = false;
+  const animations = [];
   if (state.tokenPool[Ball.master_ball] > 0){
     state.tokenPool[Ball.master_ball] -= 1;
     p.tokens[Ball.master_ball] += 1;
     gotMaster = true;
+    animations.push({
+      start: document.querySelector(`.token-chip[data-color="${Ball.master_ball}"]`),
+      target: findPlayerTokenSlot(playerIndex, Ball.master_ball),
+    });
   }
 
   markPrimaryAction("reserve");
   clampTokenLimit(p);
   clearSelections();
 
-  return animateCardMove(startEl, targetZone).then(() => {
+  return Promise.all([
+    animateCardMove(startEl, targetZone),
+    animateTokenBatch(animations),
+  ]).then(() => {
     state.market.slotsByLevel[level][idx] = drawFromDeck(level);
     renderAll();
     toast(`已保留 1 张${gotMaster ? "，并获得 1 个大师球精灵球标记" : ""}`);

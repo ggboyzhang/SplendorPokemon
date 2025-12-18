@@ -38,7 +38,7 @@ function resolveVictory(){
     trophyCards: trophyCardCount(p),
   })).sort((a, b) => {
     if (b.score !== a.score) return b.score - a.score;
-    if (b.penalty !== a.penalty) return b.penalty - a.penalty;
+    if (a.penalty !== b.penalty) return a.penalty - b.penalty;
     if (b.trophyCards !== a.trophyCards) return b.trophyCards - a.trophyCards;
     return a.index - b.index;
   });
@@ -62,7 +62,7 @@ function showVictoryModal(winner){
     el.victoryDetails.innerHTML = `
       <div>分数：${winner.score}</div>
       <div>倒扣手牌数：${winner.penalty}</div>
-      <div>得分卡牌数：${winner.trophyCards}</div>
+      <div>正面朝上卡牌数：${winner.trophyCards}</div>
     `;
   }
 

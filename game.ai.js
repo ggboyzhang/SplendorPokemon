@@ -691,6 +691,7 @@ function renderTokenZone(tokens, rewardBonuses = []){
   for (let c=0;c<BALL_NAMES.length;c++){
     const t = document.createElement("div");
     t.className = "token-mini";
+    t.dataset.color = String(c);
 
     const img = document.createElement("img");
     img.src = BALL_IMAGES[c];
