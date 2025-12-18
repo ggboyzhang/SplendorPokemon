@@ -74,6 +74,15 @@ function aiBuildContext(player, level){
       const nextScore = next ? (Number(next.point) || 0) : 0;
       return (nextScore && nextScore > (Number(card.point) || 0)) ? -5 : 5;
     },
+    opponentTurnDistance(card){
+      if (!card) return Infinity;
+      let best = Infinity;
+      urgentOpponents.forEach(({ p }) => {
+        const dist = aiTurnsToAfford(p, card, { level }, true);
+        best = Math.min(best, dist);
+      });
+      return best;
+    },
   };
 }
 
@@ -113,6 +122,9 @@ function aiReserveScore(card, player, ctx){
   if (earlyFill) score -= 30; // B/E: 保留区留空间
   if (preciousMaster) score -= 15; // C: 不乱花大师球
   if (ctx.level === 0) score -= 10; // 入门少保留
+  const opponentDistance = ctx.opponentTurnDistance(card);
+  if (opponentDistance <= 1) score += 45; // 阻断必胜路径
+  else if (opponentDistance <= 2) score += 25;
   return score;
 }
 
@@ -121,6 +133,27 @@ function aiSelectReserveTarget(player, ctx){
   if (!reservable.length) return null;
   reservable.sort((a, b) => aiReserveScore(b.card, player, ctx) - aiReserveScore(a.card, player, ctx));
   return reservable[0];
+}
+
+function aiSelectGoalCard(player, ctx){
+  const candidates = [];
+  player.reserved.forEach(card => { if (card) candidates.push({ source: "reserved", card }); });
+  marketCardsByLevels().forEach(({ card, level }) => { if (card) candidates.push({ source: level, card }); });
+  if (!candidates.length) return null;
+
+  function planScore(card){
+    const base = aiCardScore(card, player, ctx);
+    const turnCost = aiTurnsToAfford(player, card, ctx, ctx.level >= 2);
+    const threatDistance = ctx.opponentTurnDistance(card);
+    let score = base - turnCost * (15 + (ctx.level >= 3 ? 5 : 0));
+    if (threatDistance <= 1) score += 40;
+    else if (threatDistance <= 2) score += 20;
+    else if (threatDistance <= 3) score += 8;
+    return score;
+  }
+
+  candidates.sort((a, b) => planScore(b.card) - planScore(a.card));
+  return candidates[0];
 }
 
 function aiColorNeedScore(player, color){
@@ -137,6 +170,24 @@ function aiCostDeficit(card, player){
     deficit[c.ball_color] = Math.max(deficit[c.ball_color], Math.max(0, (Number(c.number) || 0) - owned));
   });
   return deficit;
+}
+
+function aiTurnsToAfford(player, card, ctx, allowMasterBall = true){
+  if (!card || !player) return Infinity;
+  const bonus = rewardBonusesOfPlayer(player);
+  const deficit = aiCostDeficit(card, player);
+  let flexible = allowMasterBall ? ((player.tokens[Ball.master_ball] || 0) + (bonus[Ball.master_ball] || 0)) : 0;
+  let required = 0;
+  deficit.forEach(need => {
+    const use = Math.min(flexible, need);
+    flexible -= use;
+    required += need - use;
+  });
+  if (required <= 0) return 0;
+
+  const tokenSpace = Math.max(0, 10 - totalTokensOfPlayer(player));
+  const gainPerTurn = Math.max(1, Math.min(3, tokenSpace));
+  return Math.ceil(required / gainPerTurn);
 }
 
 function aiPickTake3Colors(player, targetCard, ctx){
@@ -176,7 +227,8 @@ function aiPickTake2Color(player, targetCard){
 function aiShouldReserve(player, ctx, target){
   if (!target) return false;
   if (player.reserved.length >= 3) return false;
-  if (player.reserved.length >= 2 && totalTrophiesOfPlayer(player) < 15) return false; // E
+  const opponentDistance = ctx.opponentTurnDistance(target.card);
+  if (opponentDistance > 1 && player.reserved.length >= 2 && totalTrophiesOfPlayer(player) < 15) return false; // E
   if (player.reserved.length >= 1 && ctx.level === 0) return false; // B 入门少保留
   if (ctx.level >= 2 && state.tokenPool[Ball.master_ball] <= 0 && player.reserved.length >= 2) return false; // C
   return true;
@@ -186,6 +238,7 @@ function chooseAiAction(player, level){
   const availability = getActionAvailability();
   const ctx = aiBuildContext(player, level);
   const decisions = [];
+  const goal = aiSelectGoalCard(player, ctx);
 
   if (availability.buy){
     const target = aiSelectBuyTarget(player, ctx);
@@ -205,14 +258,15 @@ function chooseAiAction(player, level){
   }
 
   const desireCard = decisions.length ? decisions[0].target?.card : aiSelectReserveTarget(player, ctx)?.card;
+  const plannedCard = goal?.card || desireCard;
 
   if (availability.take3){
-    const colors = aiPickTake3Colors(player, desireCard, ctx);
+    const colors = aiPickTake3Colors(player, plannedCard, ctx);
     if (colors.length) decisions.push({ type: "take3", colors, score: 10 + colors.length });
   }
 
   if (availability.take2){
-    const color = aiPickTake2Color(player, desireCard);
+    const color = aiPickTake2Color(player, plannedCard);
     if (color !== null && color !== undefined) decisions.push({ type: "take2", colors: [color], score: 9 });
   }
 
