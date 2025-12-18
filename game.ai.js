@@ -1,14 +1,83 @@
 // ========== 11) AI 自动操作 ==========
 let aiRunning = false;
 
-function aiCardScore(card){
+function aiCardScore(card, player, ctx = {}){
   const point = Number(card?.point) || 0;
   const reward = Number(card?.reward?.number) || 0;
   const costSize = Array.isArray(card?.cost) ? card.cost.length : 0;
-  return point * 100 + reward * 10 - costSize;
+  const bonus = rewardBonusesOfPlayer(player || currentPlayer());
+  let needPenalty = 0;
+  (card?.cost || []).forEach(c => {
+    const own = (player?.tokens?.[c.ball_color] || 0) + (bonus[c.ball_color] || 0);
+    const lack = Math.max(0, (Number(c.number) || 0) - own);
+    needPenalty += lack * 8;
+  });
+  let score = point * 120 + reward * 12 - costSize * 2 - needPenalty;
+  if (ctx.threatBonus){
+    score += ctx.threatBonus(card) || 0;
+  }
+  if (ctx.futurePromise){
+    score += ctx.futurePromise(card) || 0;
+  }
+  return score;
 }
 
-function aiSelectBuyTarget(player){
+function aiBuildContext(player, level){
+  const isSuperLv3 = level >= 3;
+  const isSuperLv4 = level >= 4;
+  const knownDecks = {};
+  if (isSuperLv3){
+    knownDecks[1] = state.decks[levelKey(1)] || [];
+  }
+  if (isSuperLv4){
+    [1,2,3,4,5].forEach(lv => { knownDecks[lv] = state.decks[levelKey(lv)] || []; });
+  }
+
+  const opponentSnapshot = state.players
+    .map((p, idx) => ({ p, idx }))
+    .filter(item => item.p !== player);
+
+  function expectedTurnsToWin(p){
+    const remain = Math.max(0, 18 - totalTrophiesOfPlayer(p));
+    const avgGain = Math.max(1, Math.min(5, Math.floor(totalScoreOfPlayer(p) / Math.max(1, state.turn || 1)) + 2));
+    return Math.ceil(remain / avgGain);
+  }
+
+  const urgentOpponents = opponentSnapshot.map(item => ({
+    p: item.p,
+    idx: item.idx,
+    turns: isSuperLv4 ? expectedTurnsToWin(item.p) : 6,
+    trophies: totalTrophiesOfPlayer(item.p),
+  }));
+
+  return {
+    level,
+    knownDecks,
+    urgentOpponents,
+    threatBonus(card){
+      if (level < 1 || !card) return 0;
+      let bonus = 0;
+      urgentOpponents.forEach(({ p, turns }) => {
+        if (!p) return;
+        if (canAfford(p, card)) bonus += 40 + (Number(card.point) || 0) * 15;
+        else if (turns <= 3 && (Number(card.point) || 0) >= 2){
+          bonus += 20;
+        }
+      });
+      return bonus;
+    },
+    futurePromise(card){
+      if (!card) return 0;
+      const deck = knownDecks[card.level];
+      if (!deck || deck.length === 0) return 0;
+      const next = deck[0];
+      const nextScore = next ? (Number(next.point) || 0) : 0;
+      return (nextScore && nextScore > (Number(card.point) || 0)) ? -5 : 5;
+    },
+  };
+}
+
+function aiSelectBuyTarget(player, ctx){
   const candidates = [];
   player.reserved.forEach(card => {
     if (card && canAfford(player, card)) candidates.push({ source: "reserved", card });
@@ -17,26 +86,40 @@ function aiSelectBuyTarget(player){
     if (card && canAfford(player, card)) candidates.push({ source: "market", card });
   });
   if (!candidates.length) return null;
-  candidates.sort((a, b) => aiCardScore(b.card) - aiCardScore(a.card));
+  candidates.sort((a, b) => aiCardScore(b.card, player, ctx) - aiCardScore(a.card, player, ctx));
   return candidates[0];
 }
 
-function aiSelectEvolveTarget(player){
+function aiSelectEvolveTarget(player, ctx){
   const options = [];
   for (const { card } of marketCardsByLevels()){
     if (!card) continue;
-    const hasBase = player.hand.some(c => c?.evolution?.name === card.name && canAffordEvolution(player, c));
-    if (hasBase) options.push({ card });
+    const base = player.hand.find(c => c?.evolution?.name === card.name && canAffordEvolution(player, c));
+    if (!base) continue;
+    const cost = (card.cost || []).reduce((s, c) => s + (Number(c.number) || 0), 0);
+    if (ctx.level >= 2 && cost > 0 && totalTokensOfPlayer(player) < 6) continue; // 避免用主行动硬进化
+    options.push({ card });
   }
   if (!options.length) return null;
-  options.sort((a, b) => aiCardScore(b.card) - aiCardScore(a.card));
+  options.sort((a, b) => aiCardScore(b.card, player, ctx) - aiCardScore(a.card, player, ctx));
   return options[0];
 }
 
-function aiSelectReserveTarget(){
+function aiReserveScore(card, player, ctx){
+  if (!card) return -Infinity;
+  const earlyFill = player.reserved.length >= 2 && totalTrophiesOfPlayer(player) < 12;
+  const preciousMaster = ctx.level >= 2 && card.level <= 1 && state.tokenPool[Ball.master_ball] <= 1;
+  let score = aiCardScore(card, player, ctx);
+  if (earlyFill) score -= 30; // B/E: 保留区留空间
+  if (preciousMaster) score -= 15; // C: 不乱花大师球
+  if (ctx.level === 0) score -= 10; // 入门少保留
+  return score;
+}
+
+function aiSelectReserveTarget(player, ctx){
   const reservable = marketCardsByLevels([1,2,3]).filter(({ card }) => card);
   if (!reservable.length) return null;
-  reservable.sort((a, b) => aiCardScore(b.card) - aiCardScore(a.card));
+  reservable.sort((a, b) => aiReserveScore(b.card, player, ctx) - aiReserveScore(a.card, player, ctx));
   return reservable[0];
 }
 
@@ -45,61 +128,97 @@ function aiColorNeedScore(player, color){
   return (player.tokens[color] + (bonus[color] || 0));
 }
 
-function aiPickTake3Colors(player){
+function aiCostDeficit(card, player){
+  if (!card) return [0,0,0,0,0,0];
+  const bonus = rewardBonusesOfPlayer(player);
+  const deficit = [0,0,0,0,0,0];
+  (card.cost || []).forEach(c => {
+    const owned = (player.tokens[c.ball_color] || 0) + (bonus[c.ball_color] || 0);
+    deficit[c.ball_color] = Math.max(deficit[c.ball_color], Math.max(0, (Number(c.number) || 0) - owned));
+  });
+  return deficit;
+}
+
+function aiPickTake3Colors(player, targetCard, ctx){
   const available = BALL_KEYS
     .map((_, idx) => idx)
     .filter(idx => idx !== Ball.master_ball && state.tokenPool[idx] > 0);
+  if (!available.length) return [];
+  const targetNeed = aiCostDeficit(targetCard, player);
   available.sort((a, b) => {
-    const needDiff = aiColorNeedScore(player, a) - aiColorNeedScore(player, b);
+    const needDiff = (targetNeed[b] || 0) - (targetNeed[a] || 0);
     if (needDiff !== 0) return needDiff;
+    const needScore = aiColorNeedScore(player, a) - aiColorNeedScore(player, b);
+    if (needScore !== 0) return needScore;
     return state.tokenPool[b] - state.tokenPool[a];
   });
-  return available.slice(0, Math.min(3, available.length));
+  const picked = available.slice(0, Math.min(3, available.length));
+  if (ctx.level === 0) return picked.slice().reverse();
+  return picked;
 }
 
-function aiPickTake2Color(player){
+function aiPickTake2Color(player, targetCard){
   const options = BALL_KEYS
     .map((_, idx) => idx)
     .filter(idx => idx !== Ball.master_ball && canTakeTwoSame(idx));
   if (!options.length) return null;
+  const targetNeed = aiCostDeficit(targetCard, player);
   options.sort((a, b) => {
-    const needDiff = aiColorNeedScore(player, a) - aiColorNeedScore(player, b);
+    const needDiff = (targetNeed[b] || 0) - (targetNeed[a] || 0);
     if (needDiff !== 0) return needDiff;
+    const needScore = aiColorNeedScore(player, a) - aiColorNeedScore(player, b);
+    if (needScore !== 0) return needScore;
     return state.tokenPool[b] - state.tokenPool[a];
   });
   return options[0];
 }
 
+function aiShouldReserve(player, ctx, target){
+  if (!target) return false;
+  if (player.reserved.length >= 3) return false;
+  if (player.reserved.length >= 2 && totalTrophiesOfPlayer(player) < 15) return false; // E
+  if (player.reserved.length >= 1 && ctx.level === 0) return false; // B 入门少保留
+  if (ctx.level >= 2 && state.tokenPool[Ball.master_ball] <= 0 && player.reserved.length >= 2) return false; // C
+  return true;
+}
+
 function chooseAiAction(player, level){
   const availability = getActionAvailability();
+  const ctx = aiBuildContext(player, level);
   const decisions = [];
 
   if (availability.buy){
-    const target = aiSelectBuyTarget(player);
-    if (target) decisions.push({ type: "buy", target });
+    const target = aiSelectBuyTarget(player, ctx);
+    if (target) decisions.push({ type: "buy", target, score: aiCardScore(target.card, player, ctx) + 20 });
   }
 
   if (availability.evolve){
-    const target = aiSelectEvolveTarget(player);
-    if (target) decisions.push({ type: "evolve", target });
+    const target = aiSelectEvolveTarget(player, ctx);
+    if (target) decisions.push({ type: "evolve", target, score: aiCardScore(target.card, player, ctx) });
   }
 
   if (availability.reserve){
-    const target = aiSelectReserveTarget();
-    if (target) decisions.push({ type: "reserve", target });
+    const target = aiSelectReserveTarget(player, ctx);
+    if (aiShouldReserve(player, ctx, target)){
+      decisions.push({ type: "reserve", target, score: aiReserveScore(target?.card, player, ctx) - 5 });
+    }
   }
 
+  const desireCard = decisions.length ? decisions[0].target?.card : aiSelectReserveTarget(player, ctx)?.card;
+
   if (availability.take3){
-    const colors = aiPickTake3Colors(player);
-    if (colors.length) decisions.push({ type: "take3", colors });
+    const colors = aiPickTake3Colors(player, desireCard, ctx);
+    if (colors.length) decisions.push({ type: "take3", colors, score: 10 + colors.length });
   }
 
   if (availability.take2){
-    const color = aiPickTake2Color(player);
-    if (color !== null && color !== undefined) decisions.push({ type: "take2", colors: [color] });
+    const color = aiPickTake2Color(player, desireCard);
+    if (color !== null && color !== undefined) decisions.push({ type: "take2", colors: [color], score: 9 });
   }
 
   if (!decisions.length) return null;
+
+  decisions.sort((a, b) => (b.score || 0) - (a.score || 0));
 
   const blunder = level >= 0 ? (AI_BLUNDER_RATE[level] ?? 0) : 0;
   if (Math.random() < blunder){
@@ -748,4 +867,16 @@ function closeModals({ force = false } = {}){
   document.body.classList.remove("modal-open");
   ui.handPreviewPlayerIndex = null;
 }
+
+/* 自检说明：
+1) 页面加载无 ReferenceError/TypeError：未新增外部依赖，仅复用现有全局函数与变量。
+2) 开局正常开始：AI 流程保持 maybeAutoPlay/runAiTurn 入口不变，未修改初始化路径。
+3) AI 回合可自动行动结束：chooseAiAction/executeAiDecision 仍驱动完整行动链。
+4) 触发超额精灵球归还：autoReturnTokensForAI 逻辑未改，可继续执行归还并刷新界面。
+5) 0~4 难度差异：
+   - 0 视野受限且保守保留，决策更随意（高 blunder，反向取色）。
+   - 1/2 具正常视野并有基础阻断、保留约束，2 额外珍惜大师球。
+   - 3 读取 lv1 牌库顺序，通过 knownDecks 给 futurePromise 调整策略。
+   - 4 读取全部牌库并估算对手胜利回合，用 threatBonus 提升阻断与规划深度。
+*/
 
