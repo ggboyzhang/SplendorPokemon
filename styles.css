@@ -574,7 +574,7 @@ body.modal-open .app, body.modal-open .topbar { filter: blur(6px); transition: f
 .victory-winner { font-weight: 700; color: var(--text); margin-bottom: 8px; }
 .victory-details { display: grid; gap: 6px; margin-bottom: 10px; color: var(--muted); }
 
-.ai-info-modal { width: min(980px, 96vw); }
+.ai-info-modal { width: min(1230px, 96vw); }
 .ai-info-table-wrapper { overflow: auto; margin: 14px 0; }
 .ai-info-table {
     width: 100%;
