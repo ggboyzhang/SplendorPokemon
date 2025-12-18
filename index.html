@@ -17,6 +17,7 @@
         </div>
 
         <div class="controls">
+            <button id="btnAiInfo" class="btn">AI说明</button>
             <button id="btnNew" class="btn">新游戏</button>
             <button id="btnSave" class="btn">存档</button>
             <button id="btnLoad" class="btn">读档</button>
@@ -110,6 +111,66 @@
             <div id="tokenReturnList" class="token-return-list"></div>
             <div class="modal-actions">
                 <button id="btnConfirmTokenReturn" class="btn primary" disabled>归还</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="aiInfoModal" class="modal hidden">
+        <div class="modal-content ai-info-modal">
+            <h2>AI说明</h2>
+            <p>不同难度的 AI 拥有各自的情报范围与决策倾向，方便你选择合适的对手。</p>
+            <div class="ai-info-table-wrapper">
+                <table class="ai-info-table">
+                    <thead>
+                        <tr>
+                            <th>难度</th>
+                            <th>视野范围</th>
+                            <th>决策能力</th>
+                            <th>资源与操作偏好</th>
+                            <th>战略特点</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>入门</strong></td>
+                            <td>只能看到<br>• 当前 market 卡牌<br>• 自己的手牌</td>
+                            <td>单回合思考<br>几乎不预判</td>
+                            <td>• 很少抢对手卡牌<br>• 容易浪费 master ball<br>• 可能填满保留区</td>
+                            <td>行为直观但失误很多，经常“帮你把路铺好”，适合熟悉规则</td>
+                        </tr>
+                        <tr>
+                            <td><strong>简单</strong></td>
+                            <td>与真人玩家相同：<br>• market 卡牌<br>• 所有玩家手牌</td>
+                            <td>短期规划<br>（1 回合）</td>
+                            <td>• 开始珍惜 master ball<br>• 偶尔抢关键牌<br>• 会避免明显亏损操作</td>
+                            <td>看起来“会玩”，但不够狠，给新手一定压力</td>
+                        </tr>
+                        <tr>
+                            <td><strong>标准</strong></td>
+                            <td>与真人玩家完全相同</td>
+                            <td>中期规划<br>（2~3 回合）<br>会判断谁最危险</td>
+                            <td>• 主动阻断领先者<br>• 很少浪费 master ball<br>• 通常保留至少 1 个保留位</td>
+                            <td>会明显抢你想要的牌，打乱你的计划，是与熟练玩家势均力敌的对手</td>
+                        </tr>
+                        <tr>
+                            <td><strong>进阶</strong></td>
+                            <td>超视野：<br>• 提前知道所有 level 1 卡牌的抽牌顺序</td>
+                            <td>长期规划<br>（基于已知牌序）</td>
+                            <td>• 提前为未来卡牌做准备<br>• 极少执行亏损操作<br>• 保留行为更克制</td>
+                            <td>看起来“总是刚好卡你”，随机性对它几乎不起作用</td>
+                        </tr>
+                        <tr>
+                            <td><strong>大师</strong></td>
+                            <td>完全超视野：<br>• 知道所有未翻开的卡牌顺序</td>
+                            <td>受限最优解：<br>在对手可能获胜前，选择最优路线</td>
+                            <td>• 会为阻止你而牺牲短期收益<br>• 精准使用 master ball<br>• 逼你做亏损选择</td>
+                            <td>极具压迫感，关键牌几乎总被抢走，失误一次就会被彻底拉开</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-actions">
+                <button id="btnCloseAiInfo" class="btn">关闭</button>
             </div>
         </div>
     </div>

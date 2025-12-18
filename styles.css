@@ -574,6 +574,25 @@ body.modal-open .app, body.modal-open .topbar { filter: blur(6px); transition: f
 .victory-winner { font-weight: 700; color: var(--text); margin-bottom: 8px; }
 .victory-details { display: grid; gap: 6px; margin-bottom: 10px; color: var(--muted); }
 
+.ai-info-modal { width: min(980px, 96vw); }
+.ai-info-table-wrapper { overflow: auto; margin: 14px 0; }
+.ai-info-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    color: var(--text);
+    font-size: 14px;
+}
+.ai-info-table th,
+.ai-info-table td {
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    padding: 10px;
+    vertical-align: top;
+    background: rgba(255,255,255,0.02);
+}
+.ai-info-table th { background: rgba(59, 130, 246, 0.12); font-weight: 700; }
+.ai-info-table td strong { color: #fbbf24; }
+
 .token-return-modal {
     width: min(900px, 96vw);
 }

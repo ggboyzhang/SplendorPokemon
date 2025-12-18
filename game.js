@@ -62,6 +62,7 @@ const el = {
   btnSave: $("#btnSave"),
   btnLoad: $("#btnLoad"),
   btnResetStorage: $("#btnResetStorage"),
+  btnAiInfo: $("#btnAiInfo"),
 
   modalOverlay: $("#modalOverlay"),
   confirmNewGameModal: $("#confirmNewGameModal"),
@@ -75,6 +76,9 @@ const el = {
   btnVictoryConfirm: $("#btnVictoryConfirm"),
   victoryWinnerName: $("#victoryWinnerName"),
   victoryDetails: $("#victoryDetails"),
+
+  aiInfoModal: $("#aiInfoModal"),
+  btnCloseAiInfo: $("#btnCloseAiInfo"),
 
   handModal: $("#handModal"),
   handModalTitle: $("#handModalTitle"),
@@ -2023,6 +2027,25 @@ if (el.btnNew) el.btnNew.addEventListener("click", () => {
   showModal(el.confirmNewGameModal);
 });
 
+const ensureModalOverlay = () => {
+  if (el.modalOverlay) return el.modalOverlay;
+  const overlay = document.createElement("div");
+  overlay.id = "modalOverlay";
+  overlay.className = "modal-overlay hidden";
+  document.body.appendChild(overlay);
+  el.modalOverlay = overlay;
+  overlay.addEventListener("click", () => {
+    if (ui.tokenReturn) return;
+    closeModals();
+  });
+  return overlay;
+};
+
+if (el.btnAiInfo) el.btnAiInfo.addEventListener("click", () => {
+  ensureModalOverlay();
+  showModal(el.aiInfoModal);
+});
+
 if (el.btnSave) el.btnSave.addEventListener("click", saveToLocal);
 if (el.btnLoad) el.btnLoad.addEventListener("click", loadFromLocal);
 
@@ -2056,6 +2079,7 @@ if (el.btnConfirmPlayerCount) el.btnConfirmPlayerCount.addEventListener("click",
 if (el.btnCancelPlayerCount) el.btnCancelPlayerCount.addEventListener("click", closeModals);
 if (el.btnCloseHandModal) el.btnCloseHandModal.addEventListener("click", closeModals);
 if (el.btnCloseCardDetailModal) el.btnCloseCardDetailModal.addEventListener("click", closeModals);
+if (el.btnCloseAiInfo) el.btnCloseAiInfo.addEventListener("click", closeModals);
 if (el.btnConfirmTokenReturn) el.btnConfirmTokenReturn.addEventListener("click", confirmTokenReturn);
 
 if (el.modalOverlay) el.modalOverlay.addEventListener("click", () => {
