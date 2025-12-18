@@ -1807,8 +1807,8 @@ if (el.actEndTurn) el.actEndTurn.addEventListener("click", endTurn);
         return;
       }catch{}
     }
-    await newGame(Number(el.playerCount.value));
-    toast("已创建默认新游戏");
+    renderAll();
+    showModal(el.playerCountModal);
   }catch(err){
     console.error("加载游戏失败", err);
     lastLoadError = err?.message || lastLoadError || "Failed to fetch";
