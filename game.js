@@ -2022,7 +2022,7 @@ function closeModals({ force = false } = {}){
   ui.handPreviewPlayerIndex = null;
 }
 
-// ========== 11) 事件绑定 ==========
+// ========== 12) 事件绑定 ==========
 if (el.btnNew) el.btnNew.addEventListener("click", () => {
   showModal(el.confirmNewGameModal);
 });
@@ -2099,7 +2099,7 @@ if (el.actBuy) el.actBuy.addEventListener("click", actionBuy);
 if (el.actEvolve) el.actEvolve.addEventListener("click", actionEvolve);
 if (el.actEndTurn) el.actEndTurn.addEventListener("click", endTurn);
 
-// ========== 12) 启动 ==========
+// ========== 13) 启动 ==========
 (async function boot(){
   try{
     await loadCardLibrary();
@@ -2124,7 +2124,7 @@ if (el.actEndTurn) el.actEndTurn.addEventListener("click", endTurn);
   }
 })();
 
-// ========== 13) 工具 ==========
+// ========== 14) 工具 ==========
 function clearSelections(){
   ui.selectedTokenColors.clear();
   ui.selectedMarketCardId = null;
