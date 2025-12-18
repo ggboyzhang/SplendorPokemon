@@ -1708,7 +1708,7 @@ function renderPlayers(){
 
     zones.appendChild(renderHandZone(p.hand, idx));
     zones.appendChild(renderReserveZone(p.reserved, idx));
-    zones.appendChild(renderTokenZone(p.tokens));
+    zones.appendChild(renderTokenZone(p.tokens, rewardBonusesOfPlayer(p)));
 
     wrap.appendChild(zones);
     el.players.appendChild(wrap);
@@ -1778,7 +1778,7 @@ function renderReserveZone(cards, playerIndex){
   return zone;
 }
 
-function renderTokenZone(tokens){
+function renderTokenZone(tokens, rewardBonuses = []){
   const zone = document.createElement("div");
   zone.className = "zone token-zone";
 
@@ -1799,6 +1799,11 @@ function renderTokenZone(tokens){
     count.className = "count-badge";
     count.textContent = `×${tokens[c]}`;
     t.appendChild(count);
+
+    const reward = document.createElement("div");
+    reward.className = "reward-badge";
+    reward.textContent = `+${rewardBonuses[c] ?? 0}`;
+    t.appendChild(reward);
 
     items.appendChild(t);
   }
