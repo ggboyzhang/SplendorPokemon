@@ -36,6 +36,19 @@ const PRIMARY_ACTION_LABELS = {
   buy: "捕捉",
 };
 
+const DISABLED_AI_LEVEL = -1;
+const DEFAULT_AI_LEVEL = 2; // 标准
+const AI_LEVEL_OPTIONS = [
+  { value: DISABLED_AI_LEVEL, label: "关闭" },
+  { value: 0, label: "入门" },
+  { value: 1, label: "简单" },
+  { value: 2, label: "标准" },
+  { value: 3, label: "进阶" },
+  { value: 4, label: "大师" },
+];
+const AI_BLUNDER_RATE = [0.6, 0.4, 0.2, 0.05, 0.0];
+const AI_DELAY_MS = 420;
+
 // ========== 2) DOM ==========
 const $ = (sel) => document.querySelector(sel);
 
@@ -99,6 +112,9 @@ let ui = {
   tokenReturn: null,              // { playerIndex, required, selected: number[6] }
 };
 
+const wait = (ms = 0) => new Promise(resolve => setTimeout(resolve, ms));
+const ensurePromise = (value) => (value && typeof value.then === "function") ? value : Promise.resolve(value);
+
 let cardLibraryData = null;
 
 function makeEmptyState(){
@@ -137,6 +153,21 @@ function ensurePerTurnDefaults(){
   if (!state.perTurn) state.perTurn = { evolved: false, primaryAction: null };
   if (state.perTurn.evolved === undefined) state.perTurn.evolved = false;
   if (state.perTurn.primaryAction === undefined) state.perTurn.primaryAction = null;
+}
+
+function getPlayerAiLevel(player, index){
+  if (!player) return DISABLED_AI_LEVEL;
+  if (typeof player.aiLevel === "number") return player.aiLevel;
+  return index === 0 ? DISABLED_AI_LEVEL : DEFAULT_AI_LEVEL;
+}
+
+function ensurePlayerHasAiLevel(player, index){
+  if (!player) return;
+  player.aiLevel = getPlayerAiLevel(player, index);
+}
+
+function isAIControlledPlayer(index){
+  return getPlayerAiLevel(state.players[index], index) >= 0 && index > 0;
 }
 
 function getPrimaryActionLabel(key){
@@ -222,6 +253,7 @@ async function newGame(playerCount){
     state.players.push({
       id: `P${i}`,
       name: i === 0 ? "玩家" : `机器人${i}`,
+      aiLevel: i === 0 ? DISABLED_AI_LEVEL : DEFAULT_AI_LEVEL,
       isStarter: false,
       hand: [],      // bought/captured cards on table
       reserved: [],  // reserved cards
@@ -691,28 +723,28 @@ function animateCardMove(startEl, targetEl, duration = 800){
 
 // ========== 7) 行动实现 ==========
 function actionTake3Different(){
-  if (blockIfPrimaryActionLocked()) return;
+  if (blockIfPrimaryActionLocked()) return Promise.resolve(false);
   const p = currentPlayer();
   const colors = [...ui.selectedTokenColors];
-  if (colors.length === 0) return toast("先选择精灵球标记", { type: "error" });
-  if (colors.includes(Ball.master_ball)) return toast("大师球只能在保留卡牌时获得", { type: "error" });
+  if (colors.length === 0) return Promise.resolve(toast("先选择精灵球标记", { type: "error" }));
+  if (colors.includes(Ball.master_ball)) return Promise.resolve(toast("大师球只能在保留卡牌时获得", { type: "error" }));
 
   const availableColors = BALL_KEYS
     .map((_, idx) => idx)
     .filter((idx) => idx !== Ball.master_ball && state.tokenPool[idx] > 0);
 
-  if (availableColors.length === 0) return toast("供应区没有可拿的精灵球标记", { type: "error" });
+  if (availableColors.length === 0) return Promise.resolve(toast("供应区没有可拿的精灵球标记", { type: "error" }));
 
   if (availableColors.length >= 3){
-    if (colors.length !== 3) return toast("场上至少 3 种颜色时，必须拿 3 个不同颜色的精灵球标记", { type: "error" });
+    if (colors.length !== 3) return Promise.resolve(toast("场上至少 3 种颜色时，必须拿 3 个不同颜色的精灵球标记", { type: "error" }));
   } else {
     if (colors.length !== availableColors.length){
-      return toast(`场上仅剩 ${availableColors.length} 种颜色，必须全部拿取`, { type: "error" });
+      return Promise.resolve(toast(`场上仅剩 ${availableColors.length} 种颜色，必须全部拿取`, { type: "error" }));
     }
   }
 
   if (colors.some((c) => state.tokenPool[c] <= 0)){
-    return toast("所选颜色的精灵球标记供应不足", { type: "error" });
+    return Promise.resolve(toast("所选颜色的精灵球标记供应不足", { type: "error" }));
   }
 
   // 实际可拿：供应区有的才拿
@@ -726,17 +758,18 @@ function actionTake3Different(){
   clearSelections();
   renderAll();
   toast(`拿取 ${colors.length} 个不同颜色精灵球标记`);
+  return Promise.resolve(true);
 }
 
 function actionTake2Same(){
-  if (blockIfPrimaryActionLocked()) return;
+  if (blockIfPrimaryActionLocked()) return Promise.resolve(false);
   const p = currentPlayer();
   const colors = [...ui.selectedTokenColors];
-  if (colors.length === 0) return toast("先选择精灵球标记", { type: "error" });
-  if (colors.length !== 1) return toast("该行动只能选择 1 种精灵球标记颜色", { type: "error" });
+  if (colors.length === 0) return Promise.resolve(toast("先选择精灵球标记", { type: "error" }));
+  if (colors.length !== 1) return Promise.resolve(toast("该行动只能选择 1 种精灵球标记颜色", { type: "error" }));
   const c = colors[0];
-  if (c === Ball.master_ball) return toast("大师球只能在保留卡牌时获得", { type: "error" });
-  if (!canTakeTwoSame(c)) return toast("该颜色精灵球标记供应不足 4 个，不能拿 2 个同色", { type: "error" });
+  if (c === Ball.master_ball) return Promise.resolve(toast("大师球只能在保留卡牌时获得", { type: "error" }));
+  if (!canTakeTwoSame(c)) return Promise.resolve(toast("该颜色精灵球标记供应不足 4 个，不能拿 2 个同色", { type: "error" }));
 
   state.tokenPool[c] -= 2;
   p.tokens[c] += 2;
@@ -746,13 +779,14 @@ function actionTake2Same(){
   clearSelections();
   renderAll();
   toast("拿取 2 个同色精灵球标记");
+  return Promise.resolve(true);
 }
 
 function actionReserve(){
-  if (blockIfPrimaryActionLocked()) return;
+  if (blockIfPrimaryActionLocked()) return Promise.resolve(false);
   const p = currentPlayer();
   if (p.reserved.length >= 3){
-    if (state.tokenPool[Ball.master_ball] <= 0) return toast("保留区已满且没有可拿的大师球精灵球标记", { type: "error" });
+    if (state.tokenPool[Ball.master_ball] <= 0) return Promise.resolve(toast("保留区已满且没有可拿的大师球精灵球标记", { type: "error" }));
     state.tokenPool[Ball.master_ball] -= 1;
     p.tokens[Ball.master_ball] += 1;
     markPrimaryAction("reserve");
@@ -760,16 +794,16 @@ function actionReserve(){
     clearSelections();
     renderAll();
     toast("保留区已满，本次仅拿取 1 个大师球精灵球标记");
-    return;
+    return Promise.resolve(true);
   }
 
-  if (!ui.selectedMarketCardId) return toast("先点击展示区选择要保留的卡", { type: "error" });
+  if (!ui.selectedMarketCardId) return Promise.resolve(toast("先点击展示区选择要保留的卡", { type: "error" }));
 
   const found = findMarketCard(ui.selectedMarketCardId);
-  if (!found) return toast("选择的卡不在展示区", { type: "error" });
+  if (!found) return Promise.resolve(toast("选择的卡不在展示区", { type: "error" }));
 
   const { level, idx, card } = found;
-  if (level >= 4) return toast("稀有或传说卡牌不能被保留", { type: "error" });
+  if (level >= 4) return Promise.resolve(toast("稀有或传说卡牌不能被保留", { type: "error" }));
   const startEl = document.querySelector(`.market-card[data-card-id="${card.id}"]`);
   const targetZone = findPlayerZone(state.currentPlayerIndex, ".reserve-zone .zone-items");
 
@@ -787,26 +821,27 @@ function actionReserve(){
   clampTokenLimit(p);
   clearSelections();
 
-  animateCardMove(startEl, targetZone).then(() => {
+  return animateCardMove(startEl, targetZone).then(() => {
     state.market.slotsByLevel[level][idx] = drawFromDeck(level);
     renderAll();
     toast(`已保留 1 张${gotMaster ? "，并获得 1 个大师球精灵球标记" : ""}`);
+    return true;
   });
 }
 
 function actionBuy(){
-  if (blockIfPrimaryActionLocked()) return;
+  if (blockIfPrimaryActionLocked()) return Promise.resolve(false);
   const p = currentPlayer();
 
   // 优先：买保留牌
   if (ui.selectedReservedCard){
     const { playerIndex, cardId } = ui.selectedReservedCard;
-    if (playerIndex !== state.currentPlayerIndex) return toast("只能捕捉自己保留区的卡", { type: "error" });
+    if (playerIndex !== state.currentPlayerIndex) return Promise.resolve(toast("只能捕捉自己保留区的卡", { type: "error" }));
     const rIdx = p.reserved.findIndex(c => c.id === cardId);
-    if (rIdx < 0) return toast("该卡不在你的保留区", { type: "error" });
+    if (rIdx < 0) return Promise.resolve(toast("该卡不在你的保留区", { type: "error" }));
 
     const card = p.reserved[rIdx];
-    if (!canAfford(p, card)) return toast("精灵球标记不足，无法捕捉该卡", { type: "error" });
+    if (!canAfford(p, card)) return Promise.resolve(toast("精灵球标记不足，无法捕捉该卡", { type: "error" }));
 
     const reserveZone = findPlayerZone(state.currentPlayerIndex, ".reserve-zone");
     const startEl = reserveZone ? reserveZone.querySelector(`.mini-card[data-card-id="${card.id}"]`) : null;
@@ -820,21 +855,21 @@ function actionBuy(){
 
     clearSelections();
 
-    animateCardMove(startEl, handZone).then(() => {
+    return animateCardMove(startEl, handZone).then(() => {
       renderAll();
       toast("已捕捉保留区卡牌");
       checkEndTrigger();
+      return true;
     });
-    return;
   }
 
   // 购买展示区卡
-  if (!ui.selectedMarketCardId) return toast("先点击展示区选择要捕捉的卡", { type: "error" });
+  if (!ui.selectedMarketCardId) return Promise.resolve(toast("先点击展示区选择要捕捉的卡", { type: "error" }));
   const found = findMarketCard(ui.selectedMarketCardId);
-  if (!found) return toast("选择的卡不在展示区", { type: "error" });
+  if (!found) return Promise.resolve(toast("选择的卡不在展示区", { type: "error" }));
 
   const { level, idx, card } = found;
-  if (!canAfford(p, card)) return toast("精灵球标记不足，无法捕捉该卡", { type: "error" });
+  if (!canAfford(p, card)) return Promise.resolve(toast("精灵球标记不足，无法捕捉该卡", { type: "error" }));
 
   const startEl = document.querySelector(`.market-card[data-card-id="${card.id}"]`);
   const handZone = findPlayerZone(state.currentPlayerIndex, ".hand-zone .zone-items");
@@ -849,28 +884,29 @@ function actionBuy(){
 
   clearSelections();
 
-  animateCardMove(startEl, handZone).then(() => {
+  return animateCardMove(startEl, handZone).then(() => {
     state.market.slotsByLevel[level][idx] = drawFromDeck(level);
     renderAll();
     toast("已捕捉展示区卡牌");
     checkEndTrigger();
+    return true;
   });
 }
 
 function actionEvolve(){
-  if (state.perTurn.evolved) return toast("本回合已完成一次进化", { type: "error" });
+  if (state.perTurn.evolved) return Promise.resolve(toast("本回合已完成一次进化", { type: "error" }));
 
   const p = currentPlayer();
-  if (!ui.selectedMarketCardId) return toast("先点击展示区选择要用于进化的卡牌", { type: "error" });
+  if (!ui.selectedMarketCardId) return Promise.resolve(toast("先点击展示区选择要用于进化的卡牌", { type: "error" }));
   const found = findMarketCard(ui.selectedMarketCardId);
-  if (!found) return toast("选择的卡不在展示区", { type: "error" });
+  if (!found) return Promise.resolve(toast("选择的卡不在展示区", { type: "error" }));
 
   const { level, idx, card: marketCard } = found;
   const matchingBases = p.hand.filter(c => c?.evolution?.name === marketCard.name);
-  if (!matchingBases.length) return toast("该展示区卡牌无法进化你的任何手牌", { type: "error" });
+  if (!matchingBases.length) return Promise.resolve(toast("该展示区卡牌无法进化你的任何手牌", { type: "error" }));
 
   const baseCard = matchingBases.find(c => canAffordEvolution(p, c));
-  if (!baseCard) return toast("精灵球标记不足，无法用该卡进行进化", { type: "error" });
+  if (!baseCard) return Promise.resolve(toast("精灵球标记不足，无法用该卡进行进化", { type: "error" }));
 
   payEvolutionCost(p, baseCard);
 
@@ -884,10 +920,11 @@ function actionEvolve(){
   state.perTurn.evolved = true;
   ui.selectedMarketCardId = null;
 
-  animateCardMove(startEl, handZone).then(() => {
+  return animateCardMove(startEl, handZone).then(() => {
     state.market.slotsByLevel[level][idx] = drawFromDeck(level);
     renderAll();
     toast(`${baseCard.name} 已进化为 ${marketCard.name}`);
+    return true;
   });
 }
 
@@ -940,6 +977,7 @@ function endTurn(){
 
   clearSelections();
   renderAll();
+  return true;
 }
 
 // ========== 8) 终局触发（≥18 奖杯） ==========
@@ -1054,6 +1092,7 @@ function makeSavePayload(){
     players: state.players.map(p => ({
       name: p.name,
       isStarter: p.isStarter,
+      aiLevel: p.aiLevel,
       hand: p.hand,
       reserved: p.reserved,
       tokens: p.tokens
@@ -1103,6 +1142,7 @@ function applySavePayload(payload){
   state.players = payload.players.map((p, i) => ({
     id: `P${i}`,
     name: typeof p.name === "string" ? p.name : (i===0 ? "玩家" : `机器人${i}`),
+    aiLevel: typeof p.aiLevel === "number" ? p.aiLevel : (i===0 ? DISABLED_AI_LEVEL : DEFAULT_AI_LEVEL),
     isStarter: !!p.isStarter,
     hand: Array.isArray(p.hand) ? p.hand : [],
     reserved: Array.isArray(p.reserved) ? p.reserved : [],
@@ -1129,6 +1169,7 @@ function renderAll(){
   if (el.handModal && !el.handModal.classList.contains("hidden")){
     renderHandModal(ui.handPreviewPlayerIndex);
   }
+  maybeAutoPlay();
 }
 
 function renderErrorBanner(){
@@ -1224,6 +1265,216 @@ function renderActionButtons(){
     const disabled = !availability[key] || lockedByPrimary;
     el.disabled = disabled;
     el.classList.toggle("completed", taken === key);
+  });
+}
+
+// ========== 11) AI 自动操作 ==========
+let aiRunning = false;
+
+function aiCardScore(card){
+  const point = Number(card?.point) || 0;
+  const reward = Number(card?.reward?.number) || 0;
+  const costSize = Array.isArray(card?.cost) ? card.cost.length : 0;
+  return point * 100 + reward * 10 - costSize;
+}
+
+function aiSelectBuyTarget(player){
+  const candidates = [];
+  player.reserved.forEach(card => {
+    if (card && canAfford(player, card)) candidates.push({ source: "reserved", card });
+  });
+  marketCardsByLevels().forEach(({ card }) => {
+    if (card && canAfford(player, card)) candidates.push({ source: "market", card });
+  });
+  if (!candidates.length) return null;
+  candidates.sort((a, b) => aiCardScore(b.card) - aiCardScore(a.card));
+  return candidates[0];
+}
+
+function aiSelectEvolveTarget(player){
+  const options = [];
+  for (const { card } of marketCardsByLevels()){
+    if (!card) continue;
+    const hasBase = player.hand.some(c => c?.evolution?.name === card.name && canAffordEvolution(player, c));
+    if (hasBase) options.push({ card });
+  }
+  if (!options.length) return null;
+  options.sort((a, b) => aiCardScore(b.card) - aiCardScore(a.card));
+  return options[0];
+}
+
+function aiSelectReserveTarget(){
+  const reservable = marketCardsByLevels([1,2,3]).filter(({ card }) => card);
+  if (!reservable.length) return null;
+  reservable.sort((a, b) => aiCardScore(b.card) - aiCardScore(a.card));
+  return reservable[0];
+}
+
+function aiColorNeedScore(player, color){
+  const bonus = rewardBonusesOfPlayer(player);
+  return (player.tokens[color] + (bonus[color] || 0));
+}
+
+function aiPickTake3Colors(player){
+  const available = BALL_KEYS
+    .map((_, idx) => idx)
+    .filter(idx => idx !== Ball.master_ball && state.tokenPool[idx] > 0);
+  available.sort((a, b) => {
+    const needDiff = aiColorNeedScore(player, a) - aiColorNeedScore(player, b);
+    if (needDiff !== 0) return needDiff;
+    return state.tokenPool[b] - state.tokenPool[a];
+  });
+  return available.slice(0, Math.min(3, available.length));
+}
+
+function aiPickTake2Color(player){
+  const options = BALL_KEYS
+    .map((_, idx) => idx)
+    .filter(idx => idx !== Ball.master_ball && canTakeTwoSame(idx));
+  if (!options.length) return null;
+  options.sort((a, b) => {
+    const needDiff = aiColorNeedScore(player, a) - aiColorNeedScore(player, b);
+    if (needDiff !== 0) return needDiff;
+    return state.tokenPool[b] - state.tokenPool[a];
+  });
+  return options[0];
+}
+
+function chooseAiAction(player, level){
+  const availability = getActionAvailability();
+  const decisions = [];
+
+  if (availability.buy){
+    const target = aiSelectBuyTarget(player);
+    if (target) decisions.push({ type: "buy", target });
+  }
+
+  if (availability.evolve){
+    const target = aiSelectEvolveTarget(player);
+    if (target) decisions.push({ type: "evolve", target });
+  }
+
+  if (availability.reserve){
+    const target = aiSelectReserveTarget();
+    if (target) decisions.push({ type: "reserve", target });
+  }
+
+  if (availability.take3){
+    const colors = aiPickTake3Colors(player);
+    if (colors.length) decisions.push({ type: "take3", colors });
+  }
+
+  if (availability.take2){
+    const color = aiPickTake2Color(player);
+    if (color !== null && color !== undefined) decisions.push({ type: "take2", colors: [color] });
+  }
+
+  if (!decisions.length) return null;
+
+  const blunder = level >= 0 ? (AI_BLUNDER_RATE[level] ?? 0) : 0;
+  if (Math.random() < blunder){
+    return decisions[Math.floor(Math.random() * decisions.length)];
+  }
+
+  return decisions[0];
+}
+
+function autoReturnTokensForAI(player){
+  if (!ui.tokenReturn || ui.tokenReturn.playerIndex !== state.currentPlayerIndex) return false;
+  let remaining = ui.tokenReturn.required;
+
+  while (remaining > 0){
+    const ranked = player.tokens
+      .map((count, color) => ({ count, color }))
+      .filter(item => item.count > 0)
+      .sort((a, b) => b.count - a.count || aiColorNeedScore(player, b.color) - aiColorNeedScore(player, a.color));
+    if (!ranked.length) break;
+    const pick = ranked[0].color;
+    player.tokens[pick] -= 1;
+    state.tokenPool[pick] += 1;
+    remaining -= 1;
+  }
+
+  ui.tokenReturn = null;
+  closeModals({ force: true });
+  renderAll();
+  return true;
+}
+
+function executeAiDecision(decision){
+  if (!decision) return Promise.resolve(false);
+  switch (decision.type){
+    case "buy":{
+      ui.selectedMarketCardId = null;
+      ui.selectedReservedCard = null;
+      if (decision.target.source === "reserved"){
+        ui.selectedReservedCard = { playerIndex: state.currentPlayerIndex, cardId: decision.target.card.id };
+      } else {
+        ui.selectedMarketCardId = decision.target.card.id;
+      }
+      return ensurePromise(actionBuy());
+    }
+    case "evolve":{
+      ui.selectedReservedCard = null;
+      ui.selectedMarketCardId = decision.target.card.id;
+      return ensurePromise(actionEvolve());
+    }
+    case "reserve":{
+      ui.selectedReservedCard = null;
+      ui.selectedMarketCardId = decision.target.card.id;
+      return ensurePromise(actionReserve());
+    }
+    case "take3":{
+      ui.selectedTokenColors = new Set(decision.colors || []);
+      return ensurePromise(actionTake3Different());
+    }
+    case "take2":{
+      ui.selectedTokenColors = new Set(decision.colors || []);
+      return ensurePromise(actionTake2Same());
+    }
+    default:
+      return Promise.resolve(false);
+  }
+}
+
+async function runAiTurn(){
+  let safety = 0;
+  while (safety < 15){
+    safety += 1;
+    const player = currentPlayer();
+    const level = getPlayerAiLevel(player, state.currentPlayerIndex);
+    if (!player || level < 0 || state.victoryResolved) break;
+
+    if (ui.tokenReturn && ui.tokenReturn.playerIndex === state.currentPlayerIndex){
+      autoReturnTokensForAI(player);
+      await wait(AI_DELAY_MS);
+      continue;
+    }
+
+    if (!state.perTurn.primaryAction){
+      const decision = chooseAiAction(player, level);
+      if (!decision) break;
+      await executeAiDecision(decision);
+      await wait(AI_DELAY_MS);
+    } else {
+      endTurn();
+      await wait(AI_DELAY_MS);
+    }
+
+    const nextPlayer = currentPlayer();
+    if (!nextPlayer || getPlayerAiLevel(nextPlayer, state.currentPlayerIndex) < 0) break;
+  }
+}
+
+function maybeAutoPlay(){
+  if (aiRunning) return;
+  const player = currentPlayer();
+  const level = getPlayerAiLevel(player, state.currentPlayerIndex);
+  if (state.victoryResolved || level < 0) return;
+
+  aiRunning = true;
+  wait(AI_DELAY_MS).then(() => runAiTurn()).finally(() => {
+    aiRunning = false;
   });
 }
 
@@ -1406,6 +1657,7 @@ function renderPlayers(){
   if (!el.players) return;
   el.players.innerHTML = "";
   state.players.forEach((p, idx) => {
+    ensurePlayerHasAiLevel(p, idx);
     const wrap = document.createElement("div");
     wrap.className = "player";
     wrap.dataset.playerIndex = String(idx);
@@ -1423,6 +1675,31 @@ function renderPlayers(){
       <span class="pip">精灵球标记 ${totalTokensOfPlayer(p)}/10</span>
     `;
     head.appendChild(name);
+
+    if (idx > 0){
+      const aiWrap = document.createElement("label");
+      aiWrap.className = "ai-level";
+      aiWrap.title = "切换电脑玩家的 AI 难度";
+      aiWrap.textContent = "AI";
+
+      const select = document.createElement("select");
+      select.className = "ai-select";
+      AI_LEVEL_OPTIONS.forEach(opt => {
+        const option = document.createElement("option");
+        option.value = String(opt.value);
+        option.textContent = opt.label;
+        select.appendChild(option);
+      });
+      select.value = String(getPlayerAiLevel(p, idx));
+      select.addEventListener("change", () => {
+        p.aiLevel = Number(select.value);
+        renderPlayers();
+        maybeAutoPlay();
+      });
+
+      aiWrap.appendChild(select);
+      head.appendChild(aiWrap);
+    }
 
     wrap.appendChild(head);
 

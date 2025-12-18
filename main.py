@@ -158,12 +158,18 @@ def greedy_depth2_policy(state: GameState) -> str:
     return best_action
 
 
-def ai_with_difficulty(state: GameState, level: int) -> str:
-    """
-    Difficulty-controlled AI.
+def ai_with_difficulty(state: GameState, level: int) -> Optional[str]:
+    """Difficulty-controlled AI with an option to turn it off.
 
-    level: 0 (easiest) ~ 4 (hardest)
+    level: -1 (disabled) | 0 (easiest) ~ 4 (hardest)
+
+    When ``level`` is ``-1`` the caller is expected to handle the move
+    selection manually (e.g. by letting a human player control the role). The function
+    returns ``None`` in that case to signal "no AI move".
     """
+
+    if level == -1:
+        return None
 
     if not 0 <= level <= 4:
         raise ValueError("Difficulty level must be between 0 and 4")
