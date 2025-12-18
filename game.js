@@ -646,6 +646,17 @@ function animateCardMove(startEl, targetEl, duration = 800){
     y: targetRect.top + targetRect.height / 2,
   };
 
+  const rootStyles = getComputedStyle(document.documentElement);
+  const miniWidth = parseFloat(rootStyles.getPropertyValue("--mini-card-w"));
+  const miniHeight = parseFloat(rootStyles.getPropertyValue("--mini-card-h"));
+
+  const targetWidth = Number.isFinite(miniWidth) && miniWidth > 0 ? miniWidth : targetRect.width;
+  const targetHeight = Number.isFinite(miniHeight) && miniHeight > 0 ? miniHeight : targetRect.height;
+
+  const scaleX = targetWidth / startRect.width;
+  const scaleY = targetHeight / startRect.height;
+  const scale = Math.min(scaleX, scaleY);
+
   const clone = startEl.cloneNode(true);
   clone.classList.add("flying-card");
   Object.assign(clone.style, {
@@ -660,13 +671,14 @@ function animateCardMove(startEl, targetEl, duration = 800){
     zIndex: 9999,
     margin: "0",
     opacity: "1",
+    visibility: "visible",
   });
 
   document.body.appendChild(clone);
+  startEl.style.visibility = "hidden";
 
   const dx = targetCenter.x - startCenter.x;
   const dy = targetCenter.y - startCenter.y;
-  const scale = targetRect.width / startRect.width;
 
   // 强制一次回流，确保过渡生效
   clone.getBoundingClientRect();
@@ -781,7 +793,6 @@ function actionReserve(){
   markPrimaryAction("reserve");
   clampTokenLimit(p);
   clearSelections();
-  if (startEl) startEl.style.visibility = "hidden";
 
   animateCardMove(startEl, targetZone).then(() => {
     state.market.slotsByLevel[level][idx] = drawFromDeck(level);
@@ -815,7 +826,6 @@ function actionBuy(){
     markPrimaryAction("buy");
 
     clearSelections();
-    if (startEl) startEl.style.visibility = "hidden";
 
     animateCardMove(startEl, handZone).then(() => {
       renderAll();
@@ -845,7 +855,6 @@ function actionBuy(){
   state.market.slotsByLevel[level][idx] = null;
 
   clearSelections();
-  if (startEl) startEl.style.visibility = "hidden";
 
   animateCardMove(startEl, handZone).then(() => {
     state.market.slotsByLevel[level][idx] = drawFromDeck(level);
@@ -876,7 +885,6 @@ function actionEvolve(){
   const handZone = findPlayerZone(state.currentPlayerIndex, ".hand-zone .zone-items");
 
   state.market.slotsByLevel[level][idx] = null;
-  if (startEl) startEl.style.visibility = "hidden";
 
   const evolved = replaceWithEvolution(p, baseCard, marketCard);
 
