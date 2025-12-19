@@ -79,16 +79,23 @@ function aiBuildContext(player, level){
     idx: item.idx,
     turns: aiEstimateTurnsToWin(item.p, baselineCtx),
     trophies: totalTrophiesOfPlayer(item.p),
+    isHuman: getPlayerAiLevel(item.p, item.idx) < 0,
   }));
 
-  const dangerousOpponent = urgentOpponents.reduce((best, cur) => {
+  const humanPrimary = isSuperLv4 ? urgentOpponents.find(o => o.isHuman) : null;
+  const fastestOpponent = urgentOpponents.reduce((best, cur) => {
     if (!best || cur.turns < best.turns) return cur;
     return best;
   }, null);
 
-  const mustBlock = dangerousOpponent &&
-    dangerousOpponent.turns <= selfEstimatedTurns &&
-    (dangerousOpponent.trophies >= 12 || dangerousOpponent.turns <= 3);
+  const dangerousOpponent = humanPrimary || fastestOpponent;
+  const dangerousOpponentEstimatedTurnsToWin = dangerousOpponent ? dangerousOpponent.turns : Infinity;
+
+  const mustBlock = dangerousOpponent && (
+    dangerousOpponentEstimatedTurnsToWin <= selfEstimatedTurns ||
+    (18 - dangerousOpponent.trophies) <= 2 ||
+    dangerousOpponentEstimatedTurnsToWin <= 3
+  );
 
   return {
     level,
@@ -96,6 +103,9 @@ function aiBuildContext(player, level){
     urgentOpponents,
     selfEstimatedTurns,
     dangerousOpponent,
+    dangerousOpponentEstimatedTurnsToWin,
+    myEstimatedTurnsToWin: selfEstimatedTurns,
+    blockOrLose: !!mustBlock,
     mustBlock,
     threatBonus(card){
       if (level < 1 || !card) return 0;
@@ -244,11 +254,21 @@ function aiWouldSpendMasterBall(player, card){
 function aiPlanOpponentImpact(decision, ctx){
   const card = decision?.target?.card;
   const nextCard = decision?.planMeta?.revealNext;
-  if (!card && !nextCard) return 0;
-  const distances = [card, nextCard]
-    .filter(Boolean)
-    .map(c => ctx.opponentTurnDistance(c));
-  const best = Math.min(...distances, Infinity);
+  const dangerous = ctx.dangerousOpponent?.p;
+  const cards = [card, nextCard].filter(Boolean);
+  if (!cards.length) return 0;
+
+  function distanceTo(cardCandidate){
+    if (!cardCandidate) return Infinity;
+    if (dangerous) return aiTurnsToAfford(dangerous, cardCandidate, { level: ctx.level }, true);
+    return ctx.opponentTurnDistance(cardCandidate);
+  }
+
+  let best = Infinity;
+  cards.forEach(c => {
+    best = Math.min(best, distanceTo(c));
+  });
+
   if (best <= 1) return 2;
   if (best <= 2) return 1;
   return 0;
@@ -256,6 +276,7 @@ function aiPlanOpponentImpact(decision, ctx){
 
 function aiDetectPlanType(decision, ctx){
   if (!decision) return "develop";
+  if (decision.planMeta?.opponentThreat) return "block";
   if (decision.planMeta?.revealNext) return "reveal";
   const isBlock = decision.target?.card && ctx.opponentTurnDistance(decision.target.card) <= 2;
   if (isBlock) return "block";
@@ -272,22 +293,35 @@ function aiEvaluatePlan(decision, player, ctx, planType){
   const opponentImpact = aiPlanOpponentImpact(decision, ctx);
   const projectedOpponent = ctx.dangerousOpponent ? ctx.dangerousOpponent.turns + opponentImpact : Infinity;
   const relativeSafety = ctx.dangerousOpponent ? (projectedOpponent - ctx.selfEstimatedTurns) : 0;
-  const impactScore = opponentImpact * 28 + relativeSafety * 6;
+  const impactScore = opponentImpact * 32 + relativeSafety * 6;
   const tempoWeight = ctx.level >= 3 ? 8 : 12;
   const selfGainWeight = ctx.level >= 3 ? 8 : 6;
   const tempoScore = (selfTurns - projectedSelf) * tempoWeight + (selfGain * selfGainWeight);
   const masterPenalty = usesMasterBall ? (8 - Math.min(3, ctx.level || 0)) : 0;
-  let planScore = (decision.score || 0) + impactScore + tempoScore - masterPenalty;
+  const baseOpponentTurns = Number.isFinite(ctx.dangerousOpponentEstimatedTurnsToWin) ? ctx.dangerousOpponentEstimatedTurnsToWin : Infinity;
+  const delayOpponentBy = Math.max(0, (baseOpponentTurns - projectedOpponent));
+  let planScore = (decision.score || 0) + impactScore + tempoScore - masterPenalty + Math.max(0, delayOpponentBy) * 10;
   if (planType === "block") planScore += 15;
   if (planType === "reveal") planScore += 12;
   if (ctx.level >= 4 && ctx.mustBlock && planType === "block") planScore += 30;
+  if (ctx.level >= 4 && ctx.dangerousOpponent?.isHuman && ctx.dangerousOpponentEstimatedTurnsToWin <= 2){
+    if (planType === "block") planScore += 40;
+    else if (opponentImpact === 0) planScore -= 25;
+  }
+
+  // Skip low-value blocking that doesn't delay or improve winning odds.
+  if (planType === "block" && opponentImpact < 2 && delayOpponentBy < 2 && projectedSelf >= selfTurns && selfGain <= 1){
+    return null;
+  }
 
   return {
     decision,
     planType,
     projectedSelf,
     opponentImpact,
+    delayOpponentBy,
     usesMasterBall,
+    selfGain,
     planScore,
   };
 }
@@ -346,16 +380,19 @@ function aiSelectRevealDecision(player, ctx, availability){
     const next = deck[0];
     if (!next) continue;
     const pressure = aiCardScore(next, player, ctx) - aiCardScore(card, player, ctx);
-    if (pressure < 8 && ctx.level < 4) continue;
-    if (pressure < 14 && ctx.mustBlock) continue;
+    const opp = ctx.dangerousOpponent?.p;
+    const nextThreatDistance = opp ? aiTurnsToAfford(opp, next, { level: ctx.level }, true) : Infinity;
+    const opponentThreat = Number(next.point) >= 3 || nextThreatDistance <= 2;
+    if (pressure < 8 && ctx.level < 4 && !opponentThreat) continue;
+    if (pressure < 14 && ctx.mustBlock && !opponentThreat) continue;
     const canBuyNow = availability.buy && canAfford(player, card);
     const canReserveNow = availability.reserve && (player.reserved.length < 3 || state.tokenPool[Ball.master_ball] > 0);
     if (!canBuyNow && !canReserveNow) continue;
     const decision = {
       type: canBuyNow ? "buy" : "reserve",
       target: { source: "market", card },
-      score: pressure + (canBuyNow ? 10 : 0),
-      planMeta: { revealNext: next },
+      score: pressure + (canBuyNow ? 10 : 0) + (opponentThreat ? 20 : 0),
+      planMeta: { revealNext: next, opponentThreat },
     };
     if (!best || decision.score > best.score){
       best = decision;
@@ -369,6 +406,7 @@ function chooseAiAction(player, level){
   const ctx = aiBuildContext(player, level);
   const decisions = [];
   const goal = aiSelectGoalCard(player, ctx);
+  const blockOrLose = ctx.blockOrLose;
 
   if (availability.buy){
     const target = aiSelectBuyTarget(player, ctx);
@@ -395,12 +433,18 @@ function chooseAiAction(player, level){
 
   if (availability.take3){
     const colors = aiPickTake3Colors(player, plannedCard, ctx);
-    if (colors.length) decisions.push({ type: "take3", colors, score: 10 + colors.length });
+    const projectedTokens = totalTokensOfPlayer(player) + colors.length;
+    if (colors.length && projectedTokens <= 10){
+      decisions.push({ type: "take3", colors, score: 10 + colors.length });
+    }
   }
 
   if (availability.take2){
     const color = aiPickTake2Color(player, plannedCard);
-    if (color !== null && color !== undefined) decisions.push({ type: "take2", colors: [color], score: 9 });
+    const projectedTokens = totalTokensOfPlayer(player) + 2;
+    if (color !== null && color !== undefined && projectedTokens <= 10){
+      decisions.push({ type: "take2", colors: [color], score: 9 });
+    }
   }
 
   if (!decisions.length) return null;
@@ -419,20 +463,33 @@ function chooseAiAction(player, level){
     if (plan) plans.push(plan);
   }
 
-  const blockPlan = plans
-    .filter(p => p && p.planType === "block")
+  if (blockOrLose){
+    const filtered = plans.filter(p => {
+      if (p.planType === "economy" && p.opponentImpact === 0) return false;
+      if (p.planType === "develop" && p.opponentImpact === 0 && (p.selfGain || 0) <= 1) return false;
+      return true;
+    });
+    if (filtered.length) plans.splice(0, plans.length, ...filtered);
+  }
+
+  const blockPlans = plans.filter(p => p && p.planType === "block");
+  const blockPlan = blockPlans
     .sort((a, b) => (b.planScore || 0) - (a.planScore || 0))[0];
 
   const strongestDelayPlan = plans
     .filter(p => p && (p.opponentImpact > 0 || p.planType === "block"))
     .sort((a, b) => (b.opponentImpact || 0) - (a.opponentImpact || 0) || (b.planScore || 0) - (a.planScore || 0))[0];
 
-  if (ctx.mustBlock && blockPlan){
+  if (blockOrLose && blockPlan){
     return blockPlan.decision;
   }
 
-  if (ctx.mustBlock && strongestDelayPlan){
+  if (blockOrLose && strongestDelayPlan){
     return strongestDelayPlan.decision;
+  }
+
+  if (blockOrLose && blockPlans.length){
+    return blockPlans[0].decision;
   }
 
   plans.sort((a, b) => (b.planScore || 0) - (a.planScore || 0));
