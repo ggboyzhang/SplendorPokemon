@@ -36,6 +36,11 @@ function aiEstimateTurnsToWin(player, ctx = {}){
   const remain = Math.max(0, 18 - totalTrophiesOfPlayer(player));
   if (remain === 0) return 0;
 
+  const rewardBonuses = rewardBonusesOfPlayer(player) || [];
+  const bonusGain = Math.max(0, rewardBonuses.reduce((s, n) => s + (n || 0), 0) / 4);
+  const recentRate = state.turn > 1 ? (totalTrophiesOfPlayer(player) / Math.max(1, state.turn - 1)) : 0;
+  const baselineGain = Math.max(1, Math.min(5, 1 + bonusGain + recentRate));
+
   const estimateCtx = {
     level: ctx.level,
     knownDecks: ctx.knownDecks || {},
@@ -47,7 +52,8 @@ function aiEstimateTurnsToWin(player, ctx = {}){
   const goal = aiSelectGoalCard(player, estimateCtx) || aiSelectReserveTarget(player, estimateCtx);
   const bestPoint = Math.max(1, Number(goal?.card?.point) || 1);
   const turnsToCard = goal?.card ? (aiTurnsToAfford(player, goal.card, estimateCtx, true) + 1) : 2;
-  const cycles = Math.ceil(remain / bestPoint);
+  const optimisticGain = Math.max(bestPoint, baselineGain);
+  const cycles = Math.ceil(remain / optimisticGain);
   return Math.max(turnsToCard, cycles);
 }
 
@@ -268,7 +274,6 @@ function aiEvaluatePlan(decision, player, ctx, planType){
   if (planType === "block") planScore += 15;
   if (planType === "reveal") planScore += 12;
   if (ctx.level >= 4 && ctx.mustBlock && planType === "block") planScore += 30;
-  if (ctx.level >= 4 && ctx.mustBlock && opponentImpact === 0 && planType !== "block") planScore -= 18;
 
   return {
     decision,
@@ -335,6 +340,7 @@ function aiSelectRevealDecision(player, ctx, availability){
     if (!next) continue;
     const pressure = aiCardScore(next, player, ctx) - aiCardScore(card, player, ctx);
     if (pressure < 8 && ctx.level < 4) continue;
+    if (pressure < 14 && ctx.mustBlock) continue;
     const canBuyNow = availability.buy && canAfford(player, card);
     const canReserveNow = availability.reserve && (player.reserved.length < 3 || state.tokenPool[Ball.master_ball] > 0);
     if (!canBuyNow && !canReserveNow) continue;
