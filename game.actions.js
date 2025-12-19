@@ -37,7 +37,6 @@ function actionTake3Different(){
   }
 
   markPrimaryAction("take3");
-  clampTokenLimit(p);
   clearSelections();
   return animateTokenBatch(animations).then(() => {
     renderAll();
@@ -66,7 +65,6 @@ function actionTake2Same(){
   p.tokens[c] += 2;
 
   markPrimaryAction("take2");
-  clampTokenLimit(p);
   clearSelections();
   return animateTokenBatch(animations).then(() => {
     renderAll();
@@ -88,7 +86,6 @@ function actionReserve(){
     state.tokenPool[Ball.master_ball] -= 1;
     p.tokens[Ball.master_ball] += 1;
     markPrimaryAction("reserve");
-    clampTokenLimit(p);
     clearSelections();
     return animateTokenBatch(animations).then(() => {
       renderAll();
@@ -123,7 +120,6 @@ function actionReserve(){
   }
 
   markPrimaryAction("reserve");
-  clampTokenLimit(p);
   clearSelections();
 
   return Promise.all([
@@ -265,7 +261,7 @@ function endTurn(){
     return;
   }
 
-  // 每回合结束：检查 token 上限已在拿/保留时处理，这里再兜底
+  // 每回合结束：如超出精灵球标记上限，则要求归还
   if (clampTokenLimit(currentPlayer())){
     renderAll();
     return;
