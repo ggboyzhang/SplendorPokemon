@@ -6,6 +6,7 @@ const el = {
   market: $("#market"),
   players: $("#players"),
 
+  sessionTimer: $("#sessionTimer"),
   playerCount: $("#playerCount"),
   btnNew: $("#btnNew"),
   btnSave: $("#btnSave"),
@@ -48,4 +49,3 @@ const el = {
   actEvolve: $("#actEvolve"),
   actEndTurn: $("#actEndTurn"),
 };
-

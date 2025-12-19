@@ -1,6 +1,7 @@
 // ========== 10) 渲染 ==========
 function renderAll(){
   ensurePerTurnDefaults();
+  ensureSessionTimerTicking();
   renderTokenPool();
   renderMarket();
   renderPlayers();
@@ -23,6 +24,46 @@ function renderErrorBanner(){
     el.errorBanner.textContent = "";
     el.errorBanner.classList.add("hidden");
   }
+}
+
+function formatDuration(ms){
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const pad = (n) => String(n).padStart(2, "0");
+  if (hours > 0){
+    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+  }
+  return `${pad(minutes)}:${pad(seconds)}`;
+}
+
+function getSessionElapsedMs(){
+  if (!state?.createdAt) return 0;
+  const startTs = new Date(state.createdAt).getTime();
+  const endTs = state.sessionEndedAt ? new Date(state.sessionEndedAt).getTime() : Date.now();
+  if (!Number.isFinite(startTs) || !Number.isFinite(endTs)) return 0;
+  return Math.max(0, endTs - startTs);
+}
+
+function updateSessionTimerDisplay(){
+  if (!el.sessionTimer) return;
+  el.sessionTimer.textContent = `⏱ ${formatDuration(getSessionElapsedMs())}`;
+}
+
+function ensureSessionTimerTicking(){
+  if (!el.sessionTimer) return;
+  updateSessionTimerDisplay();
+  if (ui.sessionTimerInterval) return;
+  ui.sessionTimerInterval = setInterval(updateSessionTimerDisplay, 1000);
+}
+
+function resetSessionTimer(){
+  if (ui.sessionTimerInterval){
+    clearInterval(ui.sessionTimerInterval);
+    ui.sessionTimerInterval = null;
+  }
+  ensureSessionTimerTicking();
 }
 
 function marketCardsByLevels(levels = [1,2,3,4,5]){

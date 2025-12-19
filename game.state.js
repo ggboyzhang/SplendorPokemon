@@ -12,6 +12,7 @@ let ui = {
   handPreviewPlayerIndex: null,
   errorMessage: "",
   tokenReturn: null,              // { playerIndex, required, selected: number[6] }
+  sessionTimerInterval: null,
 };
 
 const wait = (ms = 0) => new Promise(resolve => setTimeout(resolve, ms));
@@ -23,6 +24,7 @@ function makeEmptyState(){
   return {
     version: 1,
     createdAt: new Date().toISOString(),
+    sessionEndedAt: null,
     // 公共区（不要求存档也可以存，建议存：方便完全复现）
     tokenPool: [7,7,7,7,7,5], // 默认 4人
     market: {
@@ -91,4 +93,3 @@ function markPrimaryAction(actionKey){
   ensurePerTurnDefaults();
   state.perTurn.primaryAction = actionKey;
 }
-

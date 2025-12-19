@@ -45,6 +45,10 @@ function resolveVictory(){
 
   const winner = ranking[0];
   state.victoryResolved = true;
+  if (!state.sessionEndedAt){
+    state.sessionEndedAt = new Date().toISOString();
+  }
+  updateSessionTimerDisplay();
   showVictoryModal(winner);
 }
 

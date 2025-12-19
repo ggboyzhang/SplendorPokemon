@@ -57,6 +57,21 @@ body {
 
 .controls { display: flex; gap: 8px; flex-wrap: wrap; }
 
+.session-timer {
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: linear-gradient(120deg, rgba(148, 163, 184, 0.14), rgba(17, 24, 39, 0.8));
+    color: #e0f2fe;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 110px;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.25);
+}
+
 .btn {
     padding: 8px 12px;
     border-radius: 10px;
