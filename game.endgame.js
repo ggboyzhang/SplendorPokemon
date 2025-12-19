@@ -33,12 +33,12 @@ function resolveVictory(){
   const ranking = state.players.map((p, idx) => ({
     player: p,
     index: idx,
-    score: totalScoreOfPlayer(p),
+    trophies: totalTrophiesOfPlayer(p),
     penalty: penaltyHandCount(p),
     trophyCards: trophyCardCount(p),
   })).sort((a, b) => {
-    if (b.score !== a.score) return b.score - a.score;
-    if (a.penalty !== b.penalty) return a.penalty - b.penalty;
+    if (b.trophies !== a.trophies) return b.trophies - a.trophies;
+    if (b.penalty !== a.penalty) return b.penalty - a.penalty;
     if (b.trophyCards !== a.trophyCards) return b.trophyCards - a.trophyCards;
     return a.index - b.index;
   });
@@ -60,7 +60,7 @@ function showVictoryModal(winner){
 
   if (el.victoryDetails){
     el.victoryDetails.innerHTML = `
-      <div>分数：${winner.score}</div>
+      <div>奖杯数：${winner.trophies}</div>
       <div>倒扣手牌数：${winner.penalty}</div>
       <div>正面朝上卡牌数：${winner.trophyCards}</div>
     `;
@@ -69,7 +69,6 @@ function showVictoryModal(winner){
   if (el.victoryModal){
     showModal(el.victoryModal);
   }else{
-    toast(`终局结算：${winner.player.name} 获胜！（分数：${winner.score}）`);
+    toast(`终局结算：${winner.player.name} 获胜！（奖杯数：${winner.trophies}）`);
   }
 }
-
