@@ -86,13 +86,17 @@ function aiBuildContext(player, level){
     return best;
   }, null);
 
+  const mustBlock = dangerousOpponent &&
+    dangerousOpponent.turns <= selfEstimatedTurns &&
+    (dangerousOpponent.trophies >= 12 || dangerousOpponent.turns <= 3);
+
   return {
     level,
     knownDecks,
     urgentOpponents,
     selfEstimatedTurns,
     dangerousOpponent,
-    mustBlock: dangerousOpponent && dangerousOpponent.turns <= selfEstimatedTurns,
+    mustBlock,
     threatBonus(card){
       if (level < 1 || !card) return 0;
       let bonus = 0;
@@ -268,7 +272,9 @@ function aiEvaluatePlan(decision, player, ctx, planType){
   const projectedOpponent = ctx.dangerousOpponent ? ctx.dangerousOpponent.turns + opponentImpact : Infinity;
   const relativeSafety = ctx.dangerousOpponent ? (projectedOpponent - ctx.selfEstimatedTurns) : 0;
   const impactScore = opponentImpact * 28 + relativeSafety * 6;
-  const tempoScore = -projectedSelf * 12 + (selfGain * 6);
+  const tempoWeight = ctx.level >= 3 ? 8 : 12;
+  const selfGainWeight = ctx.level >= 3 ? 8 : 6;
+  const tempoScore = -projectedSelf * tempoWeight + (selfGain * selfGainWeight);
   const masterPenalty = usesMasterBall ? (8 - Math.min(3, ctx.level || 0)) : 0;
   let planScore = (decision.score || 0) + impactScore + tempoScore - masterPenalty;
   if (planType === "block") planScore += 15;
