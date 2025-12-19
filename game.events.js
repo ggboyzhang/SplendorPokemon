@@ -68,10 +68,13 @@ window.addEventListener("resize", () => {
   requestAnimationFrame(applyHandStackingLayout);
 });
 
+window.addEventListener("blur", () => {
+  closeModals({ force: true });
+});
+
 if (el.actTake3) el.actTake3.addEventListener("click", actionTake3Different);
 if (el.actTake2) el.actTake2.addEventListener("click", actionTake2Same);
 if (el.actReserve) el.actReserve.addEventListener("click", actionReserve);
 if (el.actBuy) el.actBuy.addEventListener("click", actionBuy);
 if (el.actEvolve) el.actEvolve.addEventListener("click", actionEvolve);
 if (el.actEndTurn) el.actEndTurn.addEventListener("click", endTurn);
-
