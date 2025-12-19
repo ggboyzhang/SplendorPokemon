@@ -46,9 +46,15 @@ function getSessionElapsedMs(){
   return Math.max(0, endTs - startTs);
 }
 
+const SESSION_TIMEOUT_MS = (99 * 60 + 99) * 1000; // 99:99（超时）
+function formatSessionDuration(ms){
+  if (ms > SESSION_TIMEOUT_MS) return "超时";
+  return formatDuration(ms);
+}
+
 function updateSessionTimerDisplay(){
   if (!el.sessionTimer) return;
-  el.sessionTimer.textContent = `⏱ ${formatDuration(getSessionElapsedMs())}`;
+  el.sessionTimer.textContent = `⏱ ${formatSessionDuration(getSessionElapsedMs())}`;
 }
 
 function ensureSessionTimerTicking(){
