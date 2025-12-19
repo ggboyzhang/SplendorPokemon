@@ -63,7 +63,7 @@ function showVictoryModal(winner){
   }
 
   if (el.victoryDetails){
-    const sessionDuration = formatDuration(getSessionElapsedMs());
+    const sessionDuration = formatSessionDuration(getSessionElapsedMs());
     el.victoryDetails.innerHTML = `
       <div>奖杯数：${winner.trophies}</div>
       <div>倒扣手牌数：${winner.penalty}</div>
