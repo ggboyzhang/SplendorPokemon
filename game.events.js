@@ -10,10 +10,6 @@ const ensureModalOverlay = () => {
   overlay.className = "modal-overlay hidden";
   document.body.appendChild(overlay);
   el.modalOverlay = overlay;
-  overlay.addEventListener("click", () => {
-    if (ui.tokenReturn) return;
-    closeModals();
-  });
   return overlay;
 };
 
@@ -63,17 +59,21 @@ if (el.btnCloseCardDetailModal) el.btnCloseCardDetailModal.addEventListener("cli
 if (el.btnCloseAiInfo) el.btnCloseAiInfo.addEventListener("click", closeModals);
 if (el.btnConfirmTokenReturn) el.btnConfirmTokenReturn.addEventListener("click", confirmTokenReturn);
 
-if (el.modalOverlay) el.modalOverlay.addEventListener("click", () => {
+const handleModalBlur = (event) => {
+  if (!document.body.classList.contains("modal-open")) return;
   if (ui.tokenReturn) return;
-  closeModals();
-});
 
-document.querySelectorAll(".modal").forEach(modal => {
-  modal.addEventListener("click", event => {
-    if (ui.tokenReturn) return;
-    if (event.target === modal) closeModals();
-  });
-});
+  const target = event.target;
+  if (target === el.modalOverlay) {
+    closeModals();
+    return;
+  }
+
+  const modalContainer = target?.closest?.(".modal");
+  if (modalContainer && target === modalContainer) closeModals();
+};
+
+document.addEventListener("pointerdown", handleModalBlur);
 
 window.addEventListener("resize", () => {
   if (!el.handModal || el.handModal.classList.contains("hidden")) return;
