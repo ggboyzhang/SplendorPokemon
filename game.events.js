@@ -63,6 +63,13 @@ if (el.modalOverlay) el.modalOverlay.addEventListener("click", () => {
   closeModals();
 });
 
+document.querySelectorAll(".modal").forEach(modal => {
+  modal.addEventListener("click", event => {
+    if (ui.tokenReturn) return;
+    if (event.target === modal) closeModals();
+  });
+});
+
 window.addEventListener("resize", () => {
   if (!el.handModal || el.handModal.classList.contains("hidden")) return;
   requestAnimationFrame(applyHandStackingLayout);
