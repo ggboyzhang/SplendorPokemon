@@ -26,8 +26,13 @@ if (el.btnSave) el.btnSave.addEventListener("click", saveToLocal);
 if (el.btnLoad) el.btnLoad.addEventListener("click", loadFromLocal);
 
 if (el.btnResetStorage) el.btnResetStorage.addEventListener("click", () => {
-  localStorage.removeItem(STORAGE_KEY);
-  toast("已清空本地存档");
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    showStatusMessage("已清空本地存档");
+  } catch (error) {
+    console.error("Failed to clear local storage", error);
+    showStatusMessage("清空本地存档失败，请检查浏览器存储设置", { type: "error" });
+  }
 });
 
 if (el.btnSaveAndNew) el.btnSaveAndNew.addEventListener("click", () => {
