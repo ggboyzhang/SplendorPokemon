@@ -198,7 +198,8 @@ function aiSelectGoalCard(player, ctx){
     const base = aiCardScore(card, player, ctx);
     const turnCost = aiTurnsToAfford(player, card, ctx, ctx.level >= 2);
     const threatDistance = ctx.opponentTurnDistance(card);
-    let score = base - turnCost * (15 + (ctx.level >= 3 ? 5 : 0));
+    const turnCostWeight = ctx.level >= 3 ? 10 : 15; // 高难度放松长线惩罚，鼓励节奏
+    let score = base - turnCost * turnCostWeight;
     if (threatDistance <= 1) score += 40;
     else if (threatDistance <= 2) score += 20;
     else if (threatDistance <= 3) score += 8;
@@ -298,18 +299,19 @@ function aiEvaluatePlan(decision, player, ctx, planType){
   const opponentImpact = aiPlanOpponentImpact(decision, ctx);
   const projectedOpponent = ctx.dangerousOpponent ? ctx.dangerousOpponent.turns + opponentImpact : Infinity;
   const relativeSafety = ctx.dangerousOpponent ? (projectedOpponent - ctx.selfEstimatedTurns) : 0;
-  const impactScore = opponentImpact * 32 + relativeSafety * 6;
+  const impactScore = opponentImpact * 32 + relativeSafety * (ctx.level >= 3 ? 3 : 6); // 长线只作为软偏好
   const tempoWeight = ctx.level >= 3 ? 8 : 12;
   const selfGainWeight = ctx.level >= 3 ? 8 : 6;
   const tempoScore = (selfTurns - projectedSelf) * tempoWeight + (selfGain * selfGainWeight);
-  const masterPenalty = usesMasterBall ? (8 - Math.min(3, ctx.level || 0)) : 0;
+  const masterPenaltyBase = usesMasterBall ? (8 - Math.min(3, ctx.level || 0)) : 0;
+  const masterPenalty = masterPenaltyBase * (ctx.level >= 3 ? 0.6 : 1); // 高难度降低惩罚，便于出手
   const baseOpponentTurns = Number.isFinite(ctx.dangerousOpponentEstimatedTurnsToWin)
     ? ctx.dangerousOpponentEstimatedTurnsToWin
     : Infinity;
   const delayOpponentBy = (Number.isFinite(baseOpponentTurns) && Number.isFinite(projectedOpponent))
     ? Math.max(0, baseOpponentTurns - projectedOpponent)
     : 0;
-  const overflowPenalty = decision.planMeta?.overflow ? 18 : 0;
+  const overflowPenalty = decision.planMeta?.overflow ? (ctx.level >= 3 ? 9 : 18) : 0; // 高难度溢出惩罚减半
   let planScore = (decision.score || 0)
     + impactScore
     + tempoScore
@@ -326,7 +328,7 @@ function aiEvaluatePlan(decision, player, ctx, planType){
 
   // Skip low-value blocking that doesn't delay or improve winning odds.
   if (planType === "block" && opponentImpact < 2 && delayOpponentBy < 2 && projectedSelf >= selfTurns && selfGain <= 1){
-    return null;
+    planScore -= 28; // 直接降分而非否决，放松约束避免卡手
   }
 
   return {
@@ -492,12 +494,11 @@ function chooseAiAction(player, level){
   }
 
   if (blockOrLose){
-    const filtered = plans.filter(p => {
-      if (p.planType === "economy" && p.opponentImpact === 0) return false;
-      if (p.planType === "develop" && p.opponentImpact === 0 && (p.selfGain || 0) <= 1) return false;
-      return true;
+    const cautionPenalty = ctx.level >= 3 ? 8 : 15; // 软性偏好防守，但允许冒险
+    plans.forEach(p => {
+      if (p.planType === "economy" && p.opponentImpact === 0) p.planScore -= cautionPenalty;
+      if (p.planType === "develop" && p.opponentImpact === 0 && (p.selfGain || 0) <= 1) p.planScore -= cautionPenalty / 2;
     });
-    if (filtered.length) plans.splice(0, plans.length, ...filtered);
   }
 
   const blockPlans = plans.filter(p => p && p.planType === "block");
@@ -509,15 +510,18 @@ function chooseAiAction(player, level){
     .sort((a, b) => (b.opponentImpact || 0) - (a.opponentImpact || 0) || (b.planScore || 0) - (a.planScore || 0))[0];
 
   if (blockOrLose && blockPlan){
-    return blockPlan.decision;
+    const commitBlock = Math.random() < (ctx.level >= 3 ? 0.75 : 0.9); // 高难度也会偶尔冒险不堵
+    if (commitBlock) return blockPlan.decision;
   }
 
   if (blockOrLose && strongestDelayPlan){
-    return strongestDelayPlan.decision;
+    const commitDelay = Math.random() < (ctx.level >= 3 ? 0.8 : 0.92);
+    if (commitDelay) return strongestDelayPlan.decision;
   }
 
   if (blockOrLose && blockPlans.length){
-    return blockPlans[0].decision;
+    const commitLightBlock = Math.random() < (ctx.level >= 3 ? 0.7 : 0.88);
+    if (commitLightBlock) return blockPlans[0].decision;
   }
 
   plans.sort((a, b) => (b.planScore || 0) - (a.planScore || 0));
@@ -525,6 +529,12 @@ function chooseAiAction(player, level){
   const blunder = level >= 0 ? (AI_BLUNDER_RATE[level] ?? 0) : 0;
   if (Math.random() < blunder){
     return plans[Math.floor(Math.random() * plans.length)]?.decision || decisions[0];
+  }
+
+  if (!plans.length){
+    // 保底：所有方案被降分/过滤后仍确保能行动
+    const fallback = decisions.slice().sort((a, b) => (b.score || 0) - (a.score || 0))[0];
+    return fallback || null;
   }
 
   return plans[0]?.decision || decisions[0];
