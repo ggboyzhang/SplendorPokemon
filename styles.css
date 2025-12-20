@@ -571,7 +571,13 @@ body {
    模态框
 ======================= */
 body.modal-open .app, body.modal-open .topbar { filter: blur(6px); transition: filter 150ms ease; }
-.modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(6px); z-index: 50; }
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    /* 避免与 body 的模态模糊叠加导致双重模糊 */
+    z-index: 50;
+}
 .modal { position: fixed; inset: 0; display: grid; place-items: center; z-index: 51; }
 .modal-content {
     background: #0f172a;
