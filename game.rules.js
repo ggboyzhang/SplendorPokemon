@@ -458,4 +458,3 @@ function animateTokenBatch(movements, duration = 600){
   if (!Array.isArray(movements) || movements.length === 0) return Promise.resolve();
   return Promise.all(movements.map(({ start, target }) => animateTokenMove(start, target, duration)));
 }
-

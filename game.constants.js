@@ -46,4 +46,3 @@ const AI_LEVEL_OPTIONS = [
 ];
 const AI_BLUNDER_RATE = [0.6, 0.4, 0.2, 0.05, 0.0];
 const AI_DELAY_MS = 420;
-

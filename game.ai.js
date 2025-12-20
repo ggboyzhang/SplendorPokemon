@@ -1175,15 +1175,3 @@ function closeModals({ force = false } = {}){
   document.body.classList.remove("modal-open");
   ui.handPreviewPlayerIndex = null;
 }
-
-/* 自检说明：
-1) 页面加载无 ReferenceError/TypeError：未新增外部依赖，仅复用现有全局函数与变量。
-2) 开局正常开始：AI 流程保持 maybeAutoPlay/runAiTurn 入口不变，未修改初始化路径。
-3) AI 回合可自动行动结束：chooseAiAction/executeAiDecision 仍驱动完整行动链。
-4) 触发超额精灵球归还：autoReturnTokensForAI 逻辑未改，可继续执行归还并刷新界面。
-5) 0~4 难度差异：
-   - 0 视野受限且保守保留，决策更随意（高 blunder，反向取色）。
-   - 1/2 具正常视野并有基础阻断、保留约束，2 额外珍惜大师球。
-   - 3 读取 lv1 牌库顺序，通过 knownDecks 给 futurePromise 调整策略。
-   - 4 读取全部牌库并估算对手胜利回合，用 threatBonus 提升阻断与规划深度。
-*/

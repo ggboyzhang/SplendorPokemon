@@ -46,4 +46,3 @@ function buildDecksFromLibrary(lib){
     legend: shuffle((lib.legend || []).map(c => normalizeCard(c, 5))),
   };
 }
-
