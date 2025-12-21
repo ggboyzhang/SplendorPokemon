@@ -1,4 +1,4 @@
-"""
+﻿"""
 Headless Splendor Pokemon game core for AI self-play and training.
 
 This module implements a deterministic, gym-like environment that mirrors the
