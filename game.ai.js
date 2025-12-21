@@ -43,6 +43,7 @@ const AI_PROFILES = [
       canSpendMasterBallAggressively: true,
       mustKeepReserveSlot: false,
       allowedSacrificeLevel: 1,
+      preferCaptureOverReserve: false,
     },
   },
   {
@@ -55,6 +56,7 @@ const AI_PROFILES = [
       canSpendMasterBallAggressively: true,
       mustKeepReserveSlot: false,
       allowedSacrificeLevel: 2,
+      preferCaptureOverReserve: true,
     },
   },
   {
@@ -67,6 +69,7 @@ const AI_PROFILES = [
       canSpendMasterBallAggressively: true,
       mustKeepReserveSlot: false,
       allowedSacrificeLevel: 3,
+      preferCaptureOverReserve: true,
     },
   },
 ];
@@ -476,7 +479,10 @@ function aiEvaluatePlan(decision, player, ctx, planType, profile, visibleState){
   const overflowPenalty = decision.planMeta?.overflow ? 30 : 0;
   const masterPenalty = usesMasterBall ? (constraints.canSpendMasterBallAggressively ? 6 : 20) : 0;
   const reservePenalty = (decision.type === "reserve" && constraints.mustKeepReserveSlot && player.reserved.length >= 1) ? 10 : 0;
-  const riskCost = overflowPenalty + masterPenalty + reservePenalty;
+  const reservePriorityPenalty = (decision.type === "reserve" && constraints.preferCaptureOverReserve)
+    ? (20 + Math.max(0, player.reserved.length - 1) * 10)
+    : 0;
+  const riskCost = overflowPenalty + masterPenalty + reservePenalty + reservePriorityPenalty;
 
   let resourceEfficiency = 0;
   if (decision.type === "take3" || decision.type === "take2"){
@@ -541,7 +547,7 @@ function aiPickTake2Color(player, targetCard, visibleState){
   return options[0];
 }
 
-function aiShouldReserve(player, ctx, target, profile, visibleState){
+function aiShouldReserve(player, ctx, target, profile, visibleState, availability){
   if (!target) return false;
   if (player.reserved.length >= 3) return false;
   const opponentDistance = ctx.opponentTurnDistance(target.card);
@@ -549,6 +555,10 @@ function aiShouldReserve(player, ctx, target, profile, visibleState){
   if (player.reserved.length >= 1 && ctx.level === 0) return false; // B 入门少保留
   if (profile?.strategyConstraints?.mustKeepReserveSlot && player.reserved.length >= 2) return false;
   if (ctx.level >= 2 && (visibleState?.tokenPool?.[Ball.master_ball] || 0) <= 0 && player.reserved.length >= 2) return false; // C
+  if (profile?.strategyConstraints?.preferCaptureOverReserve && player.reserved.length >= 1 && availability?.buy){
+    const canBuyAny = visibleMarketCards(visibleState).some(({ card }) => card && canAfford(player, card));
+    if (canBuyAny) return false;
+  }
   return true;
 }
 
@@ -604,7 +614,7 @@ function chooseAiAction(player, level){
 
   if (availability.reserve){
     const target = aiSelectReserveTarget(player, ctx, visibleState);
-    if (aiShouldReserve(player, ctx, target, profile, visibleState)){
+    if (aiShouldReserve(player, ctx, target, profile, visibleState, availability)){
       decisions.push({ type: "reserve", target, score: aiReserveScore(target?.card, player, ctx) - 5 });
     }
   }
