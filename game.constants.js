@@ -32,6 +32,7 @@ const PRIMARY_ACTION_LABELS = {
   take2: "拿取同色标记",
   reserve: "保留卡牌",
   buy: "捕捉",
+  skip: "跳过行动",
 };
 
 const DISABLED_AI_LEVEL = -1;

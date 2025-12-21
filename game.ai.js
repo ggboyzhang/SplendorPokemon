@@ -619,7 +619,18 @@ async function runAiTurn(){
 
     if (!state.perTurn.primaryAction){
       const decision = chooseAiAction(player, level);
-      if (!decision) break;
+      if (!decision){
+        const availability = getActionAvailability();
+        const canAct = availability.buy || availability.reserve || availability.take3 || availability.take2 || availability.evolve;
+        if (!canAct){
+          // 无可用主要行动时，视为跳过以推进回合，避免 AI 卡住
+          markPrimaryAction("skip");
+          endTurn();
+          await wait(AI_DELAY_MS);
+          continue;
+        }
+        break;
+      }
       await executeAiDecision(decision);
       await wait(AI_DELAY_MS);
     } else {
