@@ -70,10 +70,6 @@ function ensurePlayerHasAiLevel(player, index){
   player.aiLevel = getPlayerAiLevel(player, index);
 }
 
-function isAIControlledPlayer(index){
-  return getPlayerAiLevel(state.players[index], index) >= 0 && index > 0;
-}
-
 function getPrimaryActionLabel(key){
   return PRIMARY_ACTION_LABELS[key] || "主要行动";
 }

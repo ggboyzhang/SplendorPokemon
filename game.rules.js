@@ -34,10 +34,6 @@ function totalTrophiesOfPlayer(p){
   return flattenHandCards(p).reduce((sum, c)=>sum + (c.point > 0 ? c.point : 0), 0);
 }
 
-function totalScoreOfPlayer(p){
-  return flattenHandCards(p).reduce((sum, c)=>sum + (Number(c.point) || 0), 0);
-}
-
 function penaltyHandCount(p){
   const withStack = flattenHandCards(p, true).length;
   const withoutStack = flattenHandCards(p, false).length;
