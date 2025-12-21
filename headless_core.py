@@ -47,6 +47,45 @@ class GameState:
 BALL_MASTER = 5
 
 
+def encode_card(card: Optional[dict]) -> List[float]:
+    """
+    Convert a card definition into a fixed-length numeric vector.
+
+    The vector packs level, point, cost by color, and reward by color
+    without exposing any identifier or textual fields. Empty or missing
+    cards return an all-zero vector of the same length.
+    """
+
+    vector = [0.0] * 14  # level, point, 6-cost, 6-reward
+    if not card:
+        return vector
+
+    level = card.get("level") or 0
+    point = card.get("point") or 0
+
+    cost_vec = [0.0] * 6
+    for item in card.get("cost", []) or []:
+        color = item.get("ball_color")
+        number = item.get("number") or 0
+        if isinstance(color, int) and 0 <= color < len(cost_vec):
+            cost_vec[color] += number
+
+    reward_vec = [0.0] * 6
+    reward = card.get("reward")
+    reward_items = reward if isinstance(reward, list) else ([reward] if reward else [])
+    for item in reward_items or []:
+        color = item.get("ball_color")
+        number = item.get("number") or 0
+        if isinstance(color, int) and 0 <= color < len(reward_vec):
+            reward_vec[color] += number
+
+    vector[0] = float(level)
+    vector[1] = float(point)
+    vector[2:8] = cost_vec
+    vector[8:14] = reward_vec
+    return vector
+
+
 def _get_stacked_cards(card: dict) -> List[dict]:
     return card.get("underCards") or card.get("stackedCards") or card.get("consumedCards") or []
 
@@ -156,6 +195,43 @@ class GameEnv:
         self._last_ranking = None
         self.state = self._make_initial_state()
         return copy.deepcopy(self.state)
+
+    def observe(self, player_index: int) -> dict:
+        """
+        Provide a numeric-only observation for a given player.
+        """
+        if not self.state:
+            raise ValueError("Call reset() before observe().")
+        if player_index < 0 or player_index >= len(self.state.players):
+            raise ValueError("Invalid player index.")
+
+        player = self.state.players[player_index]
+        reward_bonus = _reward_bonuses(player)
+
+        def encode_slots(level: int) -> List[List[float]]:
+            slots = self.state.market["slots_by_level"].get(level, [])
+            return [encode_card(card) for card in slots]
+
+        observation = {
+            "turn": self.state.turn,
+            "current_player": self.state.current_player_index,
+            "player_index": player_index,
+            "player": {
+                "tokens": list(player.tokens),
+                "reward_bonus": reward_bonus,
+                "trophies": _total_trophies(player),
+                "hand_size": len(_flatten_hand(player, False)),
+            },
+            "market": {
+                "level_1": encode_slots(1),
+                "level_2": encode_slots(2),
+                "level_3": encode_slots(3),
+                "rare": encode_slots(4),
+                "legend": encode_slots(5),
+            },
+            "reserved": [encode_card(card) for card in player.reserved],
+        }
+        return copy.deepcopy(observation)
 
     def legal_actions(self) -> List[dict]:
         if not self.state or self.done:
@@ -722,7 +798,15 @@ class GameEnv:
             self.state.token_pool[BALL_MASTER] += spend_purple
 
     def _first_affordable_base(self, player: PlayerState, evo_card: dict) -> Optional[dict]:
-        targets = [card for card in player.hand if card.get("evolution", {}).get("name") == evo_card.get("name")]
+        if not evo_card:
+            return None
+        targets = [
+            card
+            for card in player.hand
+            if card
+            and isinstance(card.get("evolution"), dict)
+            and card.get("evolution", {}).get("name") == evo_card.get("name")
+        ]
         for base in targets:
             if self._can_afford_evolution(player, base):
                 return base
