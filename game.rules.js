@@ -346,8 +346,8 @@ function shouldConfirmMasterBallForBuy(playerIndex, card){
   if (isAiPlayer(playerIndex)) return false;
   const p = state.players[playerIndex];
   if (!p) return false;
-  const { spentTokens, masterAsWildcard } = simulatePayCost(p, card);
-  return masterAsWildcard && spentTokens[Ball.master_ball] > 0;
+  const { spentTokens } = simulatePayCost(p, card);
+  return spentTokens[Ball.master_ball] > 0;
 }
 
 function shouldConfirmMasterBallForEvolution(playerIndex, card){
@@ -358,8 +358,8 @@ function shouldConfirmMasterBallForEvolution(playerIndex, card){
   if (evoCost.ball_color === Ball.master_ball) return false;
   const p = state.players[playerIndex];
   if (!p) return false;
-  const { spentTokens, masterAsWildcard } = simulatePayEvolutionCost(p, card);
-  return masterAsWildcard && spentTokens[Ball.master_ball] > 0;
+  const { spentTokens } = simulatePayEvolutionCost(p, card);
+  return spentTokens[Ball.master_ball] > 0;
 }
 
 function requestMasterBallConfirmation(playerIndex, proceed){
