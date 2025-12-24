@@ -240,6 +240,56 @@ function payCost(p, card){
   }
 }
 
+function simulatePayCost(p, card){
+  const need = [0,0,0,0,0,0];
+  for (const item of card.cost){
+    if (item.ball_color >= 0 && item.ball_color <= 5){
+      need[item.ball_color] += item.number;
+    }
+  }
+
+  const bonus = rewardBonusesOfPlayer(p);
+  const spent = [0,0,0,0,0,0];
+  let purpleBonus = bonus[5];
+  let purpleTokens = p.tokens[5];
+  let masterAsWildcard = false;
+
+  for (let c=0;c<5;c++){
+    let required = need[c];
+    const useBonus = Math.min(bonus[c], required);
+    required -= useBonus;
+
+    const useToken = Math.min(p.tokens[c], required);
+    required -= useToken;
+    spent[c] += useToken;
+
+    if (required > 0){
+      const usePurpleBonus = Math.min(purpleBonus, required);
+      purpleBonus -= usePurpleBonus;
+      required -= usePurpleBonus;
+
+      const usePurpleToken = Math.min(purpleTokens, required);
+      purpleTokens -= usePurpleToken;
+      spent[5] += usePurpleToken;
+      if (usePurpleToken > 0) masterAsWildcard = true;
+      required -= usePurpleToken;
+    }
+  }
+
+  let purpleRequired = need[5];
+  const usePurpleBonus = Math.min(purpleBonus, purpleRequired);
+  purpleBonus -= usePurpleBonus;
+  purpleRequired -= usePurpleBonus;
+
+  if (purpleRequired > 0){
+    const usePurpleToken = Math.min(purpleTokens, purpleRequired);
+    purpleTokens -= usePurpleToken;
+    spent[5] += usePurpleToken;
+  }
+
+  return { spentTokens: spent, masterAsWildcard };
+}
+
 function canAffordEvolution(p, card){
   const evoCost = card?.evolution?.cost;
   if (!evoCost || evoCost.ball_color === undefined || evoCost.number === undefined) return false;
@@ -295,6 +345,90 @@ function payEvolutionCost(p, card){
     p.tokens[Ball.master_ball] -= spendPurple;
     state.tokenPool[Ball.master_ball] += spendPurple;
   }
+}
+
+function simulatePayEvolutionCost(p, card){
+  const evoCost = card?.evolution?.cost;
+  if (!evoCost) return { spentTokens: [0,0,0,0,0,0], masterAsWildcard: false };
+  const color = evoCost.ball_color;
+  let remaining = evoCost.number;
+  const bonus = rewardBonusesOfPlayer(p);
+  const spent = [0,0,0,0,0,0];
+  let masterAsWildcard = false;
+
+  if (color !== Ball.master_ball){
+    const useBonus = Math.min(bonus[color], remaining);
+    remaining -= useBonus;
+
+    const spendColor = Math.min(p.tokens[color], remaining);
+    spent[color] += spendColor;
+    remaining -= spendColor;
+  }
+
+  if (remaining > 0){
+    const spendPurpleBonus = Math.min(bonus[Ball.master_ball], remaining);
+    remaining -= spendPurpleBonus;
+  }
+
+  if (remaining > 0){
+    const spendPurple = Math.min(p.tokens[Ball.master_ball], remaining);
+    spent[Ball.master_ball] += spendPurple;
+    if (color !== Ball.master_ball && spendPurple > 0) masterAsWildcard = true;
+  }
+
+  return { spentTokens: spent, masterAsWildcard };
+}
+
+function isRareOrLegend(card){
+  return card?.level >= 4;
+}
+
+function isAiPlayer(playerIndex){
+  const player = state.players[playerIndex];
+  return getPlayerAiLevel(player, playerIndex) !== DISABLED_AI_LEVEL;
+}
+
+function shouldConfirmMasterBallForBuy(playerIndex, card){
+  if (!card) return false;
+  if (isRareOrLegend(card)) return false;
+  if (isAiPlayer(playerIndex)) return false;
+  const p = state.players[playerIndex];
+  if (!p) return false;
+  const { spentTokens, masterAsWildcard } = simulatePayCost(p, card);
+  return masterAsWildcard && spentTokens[Ball.master_ball] > 0;
+}
+
+function shouldConfirmMasterBallForEvolution(playerIndex, card){
+  if (!card) return false;
+  if (isAiPlayer(playerIndex)) return false;
+  const evoCost = card?.evolution?.cost;
+  if (!evoCost) return false;
+  if (evoCost.ball_color === Ball.master_ball) return false;
+  const p = state.players[playerIndex];
+  if (!p) return false;
+  const { spentTokens, masterAsWildcard } = simulatePayEvolutionCost(p, card);
+  return masterAsWildcard && spentTokens[Ball.master_ball] > 0;
+}
+
+function requestMasterBallConfirmation(playerIndex, proceed){
+  if (!el.masterBallConfirmModal) return ensurePromise(proceed());
+  return new Promise(resolve => {
+    ui.pendingMasterBallConfirm = { proceed, resolve };
+    showModal(el.masterBallConfirmModal);
+  });
+}
+
+function resolveMasterBallConfirmation(confirmed){
+  if (!ui.pendingMasterBallConfirm) return;
+  const { proceed, resolve } = ui.pendingMasterBallConfirm;
+  ui.pendingMasterBallConfirm = null;
+  if (!confirmed){
+    closeModals();
+    resolve(false);
+    return;
+  }
+  closeModals();
+  ensurePromise(proceed()).then(resolve);
 }
 
 function cleanStackData(card){

@@ -152,20 +152,28 @@ function actionBuy(){
     const startEl = reserveZone ? reserveZone.querySelector(`.mini-card[data-card-id="${card.id}"]`) : null;
     const handZone = findPlayerZone(state.currentPlayerIndex, ".hand-zone .zone-items");
 
-    payCost(p, card);
-    p.reserved.splice(rIdx, 1);
-    p.hand.push(card);
+    const proceed = () => {
+      payCost(p, card);
+      p.reserved.splice(rIdx, 1);
+      p.hand.push(card);
 
-    markPrimaryAction("buy");
+      markPrimaryAction("buy");
 
-    clearSelections();
+      clearSelections();
 
-    return animateCardMove(startEl, handZone).then(() => {
-      renderAll();
-      toast("已捕捉保留区卡牌");
-      checkEndTrigger();
-      return true;
-    });
+      return animateCardMove(startEl, handZone).then(() => {
+        renderAll();
+        toast("已捕捉保留区卡牌");
+        checkEndTrigger();
+        return true;
+      });
+    };
+
+    if (shouldConfirmMasterBallForBuy(state.currentPlayerIndex, card)){
+      return requestMasterBallConfirmation(state.currentPlayerIndex, proceed);
+    }
+
+    return ensurePromise(proceed());
   }
 
   // 购买展示区卡
@@ -179,23 +187,31 @@ function actionBuy(){
   const startEl = document.querySelector(`.market-card[data-card-id="${card.id}"]`);
   const handZone = findPlayerZone(state.currentPlayerIndex, ".hand-zone .zone-items");
 
-  payCost(p, card);
-  p.hand.push(card);
+  const proceed = () => {
+    payCost(p, card);
+    p.hand.push(card);
 
-  markPrimaryAction("buy");
+    markPrimaryAction("buy");
 
-  // 补牌在动画结束后进行
-  state.market.slotsByLevel[level][idx] = null;
+    // 补牌在动画结束后进行
+    state.market.slotsByLevel[level][idx] = null;
 
-  clearSelections();
+    clearSelections();
 
-  return animateCardMove(startEl, handZone).then(() => {
-    state.market.slotsByLevel[level][idx] = drawFromDeck(level);
-    renderAll();
-    toast("已捕捉展示区卡牌");
-    checkEndTrigger();
-    return true;
-  });
+    return animateCardMove(startEl, handZone).then(() => {
+      state.market.slotsByLevel[level][idx] = drawFromDeck(level);
+      renderAll();
+      toast("已捕捉展示区卡牌");
+      checkEndTrigger();
+      return true;
+    });
+  };
+
+  if (shouldConfirmMasterBallForBuy(state.currentPlayerIndex, card)){
+    return requestMasterBallConfirmation(state.currentPlayerIndex, proceed);
+  }
+
+  return ensurePromise(proceed());
 }
 
 function actionEvolve(){
@@ -229,30 +245,38 @@ function actionEvolve(){
   const baseCard = matchingBases.find(c => canAffordEvolution(p, c));
   if (!baseCard) return Promise.resolve(toast("精灵球标记不足，无法用该卡进行进化", { type: "error" }));
 
-  payEvolutionCost(p, baseCard);
+  const proceed = () => {
+    payEvolutionCost(p, baseCard);
 
-  const handZone = findPlayerZone(state.currentPlayerIndex, ".hand-zone .zone-items");
+    const handZone = findPlayerZone(state.currentPlayerIndex, ".hand-zone .zone-items");
 
-  if (usingReserved){
-    p.reserved.splice(reserveIndex, 1);
-  } else {
-    state.market.slotsByLevel[level][idx] = null;
+    if (usingReserved){
+      p.reserved.splice(reserveIndex, 1);
+    } else {
+      state.market.slotsByLevel[level][idx] = null;
+    }
+
+    const evolved = replaceWithEvolution(p, baseCard, marketCard);
+
+    state.perTurn.evolved = true;
+    ui.selectedMarketCardId = null;
+    ui.selectedReservedCard = null;
+
+    return animateCardMove(startEl, handZone).then(() => {
+      if (!usingReserved){
+        state.market.slotsByLevel[level][idx] = drawFromDeck(level);
+      }
+      renderAll();
+      toast(`${baseCard.name} 已进化为 ${marketCard.name}`);
+      return true;
+    });
+  };
+
+  if (shouldConfirmMasterBallForEvolution(state.currentPlayerIndex, baseCard)){
+    return requestMasterBallConfirmation(state.currentPlayerIndex, proceed);
   }
 
-  const evolved = replaceWithEvolution(p, baseCard, marketCard);
-
-  state.perTurn.evolved = true;
-  ui.selectedMarketCardId = null;
-  ui.selectedReservedCard = null;
-
-  return animateCardMove(startEl, handZone).then(() => {
-    if (!usingReserved){
-      state.market.slotsByLevel[level][idx] = drawFromDeck(level);
-    }
-    renderAll();
-    toast(`${baseCard.name} 已进化为 ${marketCard.name}`);
-    return true;
-  });
+  return ensurePromise(proceed());
 }
 
 function endTurn(){

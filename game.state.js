@@ -13,6 +13,7 @@ let ui = {
   errorMessage: "",
   tokenReturn: null,              // { playerIndex, required, selected: number[6] }
   sessionTimerInterval: null,
+  pendingMasterBallConfirm: null, // { proceed, resolve }
 };
 
 const wait = (ms = 0) => new Promise(resolve => setTimeout(resolve, ms));
