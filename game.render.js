@@ -198,8 +198,9 @@ function renderCheatModal(){
   el.cheatTokenList.innerHTML = "";
 
   BALL_NAMES.forEach((name, color) => {
+    const poolDepleted = state.tokenPool[color] <= 0;
     const wrap = document.createElement("div");
-    wrap.className = "cheat-token-row" + (state.tokenPool[color] <= 0 ? " ghost" : "");
+    wrap.className = "cheat-token-row";
     wrap.dataset.color = String(color);
 
     const info = document.createElement("div");
@@ -209,6 +210,7 @@ function renderCheatModal(){
     img.src = BALL_IMAGES[color];
     img.alt = name;
     img.loading = "lazy";
+    img.className = poolDepleted ? "depleted" : "";
     info.appendChild(img);
 
     const label = document.createElement("div");
@@ -229,7 +231,7 @@ function renderCheatModal(){
     const controls = document.createElement("div");
     controls.className = "cheat-token-controls";
 
-    const incDisabled = state.tokenPool[color] <= 0;
+    const incDisabled = poolDepleted;
     const decDisabled = player.tokens[color] <= 0;
 
     const inc = document.createElement("button");
