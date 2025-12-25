@@ -14,6 +14,7 @@ let ui = {
   tokenReturn: null,              // { playerIndex, required, selected: number[6] }
   sessionTimerInterval: null,
   pendingMasterBallConfirm: null, // { proceed, resolve }
+  cheatPlayerIndex: 0,
 };
 
 const wait = (ms = 0) => new Promise(resolve => setTimeout(resolve, ms));

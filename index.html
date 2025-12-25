@@ -18,6 +18,7 @@
 
         <div class="controls">
             <div id="sessionTimer" class="session-timer" aria-live="polite" title="本局进行时长">⏱ --:--</div>
+            <button id="btnCheat" class="btn">作弊</button>
             <button id="btnAiInfo" class="btn">AI说明</button>
             <button id="btnNew" class="btn">新游戏</button>
             <button id="btnSave" class="btn">存档</button>
@@ -62,6 +63,24 @@
                 <button id="btnSaveAndNew" class="btn primary">保存并开始新游戏</button>
                 <button id="btnNewWithoutSave" class="btn danger">放弃保存开始新游戏</button>
                 <button id="btnCancelNew" class="btn">返回游戏</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="cheatModal" class="modal hidden">
+        <div class="modal-content cheat-modal">
+            <div class="cheat-modal-header">
+                <h2>作弊</h2>
+                <label class="select">
+                    <span>选择玩家</span>
+                    <select id="cheatPlayerSelect"></select>
+                </label>
+            </div>
+
+            <div id="cheatTokenList" class="cheat-token-list"></div>
+
+            <div class="modal-actions">
+                <button id="btnCloseCheat" class="btn">关闭</button>
             </div>
         </div>
     </div>

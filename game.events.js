@@ -3,6 +3,13 @@ if (el.btnNew) el.btnNew.addEventListener("click", () => {
   showModal(el.confirmNewGameModal);
 });
 
+if (el.btnCheat) el.btnCheat.addEventListener("click", () => {
+  ensureModalOverlay();
+  ui.cheatPlayerIndex = Math.min(ui.cheatPlayerIndex ?? 0, Math.max(0, state.players.length - 1));
+  renderCheatModal();
+  showModal(el.cheatModal);
+});
+
 const ensureModalOverlay = () => {
   if (el.modalOverlay) return el.modalOverlay;
   const overlay = document.createElement("div");
@@ -57,9 +64,15 @@ if (el.btnCancelPlayerCount) el.btnCancelPlayerCount.addEventListener("click", c
 if (el.btnCloseHandModal) el.btnCloseHandModal.addEventListener("click", closeModals);
 if (el.btnCloseCardDetailModal) el.btnCloseCardDetailModal.addEventListener("click", closeModals);
 if (el.btnCloseAiInfo) el.btnCloseAiInfo.addEventListener("click", closeModals);
+if (el.btnCloseCheat) el.btnCloseCheat.addEventListener("click", closeModals);
 if (el.btnConfirmTokenReturn) el.btnConfirmTokenReturn.addEventListener("click", confirmTokenReturn);
 if (el.btnConfirmMasterBallYes) el.btnConfirmMasterBallYes.addEventListener("click", () => resolveMasterBallConfirmation(true));
 if (el.btnConfirmMasterBallNo) el.btnConfirmMasterBallNo.addEventListener("click", () => resolveMasterBallConfirmation(false));
+
+if (el.cheatPlayerSelect) el.cheatPlayerSelect.addEventListener("change", () => {
+  ui.cheatPlayerIndex = Number(el.cheatPlayerSelect.value) || 0;
+  renderCheatModal();
+});
 
 const handleModalBlur = (event) => {
   if (!document.body.classList.contains("modal-open")) return;
