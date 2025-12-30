@@ -136,6 +136,36 @@ function getActionAvailability(){
   };
 }
 
+function canCurrentPlayerBuyCardNow(card){
+  const player = currentPlayer();
+  if (!player || !card) return false;
+  if (state.victoryResolved) return false;
+  if (hasTakenPrimaryAction()) return false;
+  return canAfford(player, card);
+}
+
+function canCurrentPlayerBuyReservedCard(card, ownerIndex){
+  if (ownerIndex !== state.currentPlayerIndex) return false;
+  return canCurrentPlayerBuyCardNow(card);
+}
+
+function canCurrentPlayerEvolveCard(card){
+  const player = currentPlayer();
+  if (!player || !card?.evolution) return false;
+  if (state.victoryResolved || state.perTurn?.evolved) return false;
+  if (!canAffordEvolution(player, card)) return false;
+
+  const targetName = card.evolution.name;
+  if (!targetName) return false;
+
+  const candidates = [
+    ...marketCardsByLevels().map(({ card }) => card),
+    ...player.reserved,
+  ];
+
+  return candidates.some(c => c?.name === targetName);
+}
+
 function renderActionButtons(){
   if (!el.actTake3) return;
   const availability = getActionAvailability();

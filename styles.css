@@ -728,6 +728,30 @@ body {
         background: rgba(255,255,255,0.04);
     }
 
+.glow-gold {
+    animation: glow-gold 1.5s ease-in-out infinite;
+    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.68), 0 0 14px rgba(251, 191, 36, 0.5);
+    border-color: rgba(251, 191, 36, 0.75);
+}
+
+.glow-silver {
+    animation: glow-silver 1.6s ease-in-out infinite;
+    box-shadow: 0 0 0 0 rgba(226, 232, 240, 0.64), 0 0 14px rgba(226, 232, 240, 0.45);
+    border-color: rgba(226, 232, 240, 0.78);
+}
+
+@keyframes glow-gold {
+    0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.65), 0 0 12px rgba(251, 191, 36, 0.45); }
+    60% { box-shadow: 0 0 0 10px rgba(251, 191, 36, 0), 0 0 18px rgba(251, 191, 36, 0.4); }
+    100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0), 0 0 12px rgba(251, 191, 36, 0.45); }
+}
+
+@keyframes glow-silver {
+    0% { box-shadow: 0 0 0 0 rgba(226, 232, 240, 0.6), 0 0 12px rgba(226, 232, 240, 0.42); }
+    60% { box-shadow: 0 0 0 10px rgba(226, 232, 240, 0), 0 0 18px rgba(226, 232, 240, 0.36); }
+    100% { box-shadow: 0 0 0 0 rgba(226, 232, 240, 0), 0 0 12px rgba(226, 232, 240, 0.42); }
+}
+
 .level-chip {
     padding: 2px 6px;
     border-radius: 8px;
