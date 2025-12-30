@@ -1070,7 +1070,7 @@ function renderHandZone(cards, playerIndex){
   const offset = 16;
 
   displayCards.forEach((card, idx) => {
-    const highlight = canCurrentPlayerEvolveCard(card);
+    const highlight = playerIndex === state.currentPlayerIndex && canCurrentPlayerEvolveCard(card);
     const mini = renderMiniCard(card, false, highlight ? "glow-silver" : "");
     mini.style.left = `${idx * offset}px`;
     mini.style.zIndex = String(1 + idx);
@@ -1102,7 +1102,9 @@ function renderReserveZone(cards, playerIndex){
     const selected = ui.selectedReservedCard &&
       ui.selectedReservedCard.cardId === card.id &&
       ui.selectedReservedCard.playerIndex === playerIndex;
-    const highlight = canCurrentPlayerBuyReservedCard(card, playerIndex) && !selected;
+    const highlight = playerIndex === state.currentPlayerIndex &&
+      canCurrentPlayerBuyReservedCard(card, playerIndex) &&
+      !selected;
 
     const mini = renderMiniCard(card, selected, highlight ? "glow-gold" : "");
     mini.addEventListener("click", (ev) => {
@@ -1220,7 +1222,7 @@ function renderHandModal(playerIndex = ui.handPreviewPlayerIndex){
     const grid = document.createElement("div");
     grid.className = "hand-group-grid";
     list.forEach(card => {
-      const highlight = canCurrentPlayerEvolveCard(card) ? "glow-silver" : "";
+      const highlight = playerIndex === state.currentPlayerIndex && canCurrentPlayerEvolveCard(card) ? "glow-silver" : "";
       grid.appendChild(renderCardStack(card, { highlightClass: highlight }));
     });
 
