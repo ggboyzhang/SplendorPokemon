@@ -342,12 +342,15 @@ function isAiPlayer(playerIndex){
 
 function shouldConfirmMasterBallForBuy(playerIndex, card){
   if (!card) return false;
-  if (isRareOrLegend(card)) return false;
   if (isAiPlayer(playerIndex)) return false;
   const p = state.players[playerIndex];
   if (!p) return false;
   const { spentTokens, masterAsWildcard } = simulatePayCost(p, card);
-  if (masterAsWildcard && spentTokens[Ball.master_ball] > 0) return true;
+  const spentMaster = spentTokens[Ball.master_ball];
+
+  if (isRareOrLegend(card)) return spentMaster >= 2 && masterAsWildcard;
+
+  if (masterAsWildcard && spentMaster > 0) return true;
   return spentTokens[Ball.master_ball] > 0 && needsMasterAsWildcardForCard(p, card);
 }
 
