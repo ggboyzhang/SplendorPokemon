@@ -36,7 +36,7 @@ const PRIMARY_ACTION_LABELS = {
 };
 
 const DISABLED_AI_LEVEL = -1;
-const DEFAULT_AI_LEVEL = 0; // 标准
+const DEFAULT_AI_LEVEL = 0;
 const AI_LEVEL_OPTIONS = [
   { value: DISABLED_AI_LEVEL, label: "关闭" },
   { value: 0, label: "入门" },
