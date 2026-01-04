@@ -1,6 +1,7 @@
 // ========== 5) 新游戏初始化 ==========
 async function newGame(playerCount){
   const lib = await loadCardLibrary();
+  const trainers = await loadTrainers();
   lastLoadError = null;
   state = makeEmptyState();
   ui.errorMessage = "";
@@ -13,7 +14,7 @@ async function newGame(playerCount){
   for (let i=0;i<playerCount;i++){
     state.players.push({
       id: `P${i}`,
-      name: i === 0 ? "玩家" : `机器人${i}`,
+      name: trainers[i].name,
       aiLevel: i === 0 ? DISABLED_AI_LEVEL : DEFAULT_AI_LEVEL,
       isStarter: false,
       hand: [],      // bought/captured cards on table

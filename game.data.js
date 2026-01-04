@@ -2,6 +2,9 @@
 let cardLibraryPromise = null;
 let lastLoadError = null;
 
+let trainersPromise = null;
+let trainersData = null;
+
 function loadCardLibrary(){
   if (!cardLibraryPromise){
     const url = new URL("cards.json", window.location.href).toString();
@@ -27,6 +30,36 @@ function loadCardLibrary(){
     cardLibraryData = lib;
     return lib;
   });
+}
+
+function loadTrainers(){
+  if (!trainersPromise){
+    const url = new URL("trainers.json", window.location.href).toString();
+
+    trainersPromise = fetch(url, {
+      cache: "no-store",
+      headers: { "Accept": "application/json" }
+    })
+    .then(res => {
+      if (!res.ok) throw new Error(`trainers.json 加载失败（${res.status}）`);
+      return res.json();
+    })
+    .then(data => {
+      trainersData = data;
+      return data;
+    })
+    .catch(err => {
+      trainersPromise = null;
+
+      if (window.location.protocol === "file:"){
+        lastLoadError = "无法在 file:// 下加载 trainers.json，请使用本地服务器";
+      } else {
+        lastLoadError = err?.message || "Failed to fetch trainers.json";
+      }
+      throw err;
+    });
+  }
+  return trainersPromise;
 }
 
 function normalizeCard(raw, level){
